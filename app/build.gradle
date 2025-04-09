@@ -1,135 +1,135 @@
 plugins {
-    id 'groovy'
-    id 'application'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+  id 'groovy'
+  id 'application'
+  id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'com.webanalyzer'
 version = '1.0.0'
 
 repositories {
-    mavenCentral()
+  mavenCentral()
 }
 
 dependencies {
-    // Core libraries
-    implementation libs.groovy.all
-    implementation libs.guava
+  // Core libraries
+  implementation libs.groovy.all
+  implementation libs.guava
 
-    // CLI parsing
-    implementation libs.picocli.core
-    implementation libs.picocli.codegen
+  // CLI parsing
+  implementation libs.picocli.core
+  implementation libs.picocli.codegen
 
-    // Web and HTML processing
-    implementation libs.geb.core
-    implementation libs.jsoup
+  // Web and HTML processing
+  implementation libs.geb.core
+  implementation libs.jsoup
 
-    // WebDriver for browser automation
-    implementation libs.selenium.java
-    implementation libs.selenium.chrome
-    implementation libs.selenium.firefox
-    implementation libs.webdrivermanager
+  // WebDriver for browser automation
+  implementation libs.selenium.java
+  implementation libs.selenium.chrome
+  implementation libs.selenium.firefox
+  implementation libs.webdrivermanager
 
-    // HTTP and JSON processing
-    implementation libs.httpclient
-    implementation libs.groovy.json
+  // HTTP and JSON processing
+  implementation libs.httpclient
+  implementation libs.groovy.json
 
-    // Alternative CLI
-    implementation libs.commons.cli
+  // Alternative CLI
+  implementation libs.commons.cli
 
-    // Logging
-    implementation libs.slf4j.api
-    implementation libs.logback
+  // Logging
+  implementation libs.slf4j.api
+  implementation libs.logback
 
-    // Testing
-    testImplementation libs.spock.core
-    testImplementation libs.junit
-    testRuntimeOnly libs.junit.engine
-    testImplementation libs.geb.spock
+  // Testing
+  testImplementation libs.spock.core
+  testImplementation libs.junit
+  testRuntimeOnly libs.junit.engine
+  testImplementation libs.geb.spock
 }
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(21)
+  }
 }
 
 application {
-    mainClass = 'com.webanalyzer.cli.WebPageAnalyzer'
+  mainClass = 'com.webanalyzer.cli.WebPageAnalyzer'
 }
 
 jar {
-    manifest {
-        attributes('Main-Class': 'com.webanalyzer.cli.WebPageAnalyzer')
-    }
+  manifest {
+    attributes('Main-Class': 'com.webanalyzer.cli.WebPageAnalyzer')
+  }
 }
 
 // Enable preview features
 tasks.withType(JavaCompile).configureEach {
-    options.compilerArgs += '--enable-preview'
+//  options.compilerArgs += '--enable-preview'
 }
 
 tasks.withType(Test).configureEach {
-    jvmArgs += '--enable-preview'
-    useJUnitPlatform()
+//  jvmArgs += '--enable-preview'
+  useJUnitPlatform()
 }
 
 tasks.withType(JavaExec).configureEach {
-    jvmArgs += '--enable-preview'
+//  jvmArgs += '--enable-preview'
 }
 
 tasks.named('run', JavaExec) {
-    group = 'application'
-    description = 'Runs the Web Page Analyzer'
+  group = 'application'
+  description = 'Runs the Web Page Analyzer'
 
-    // Allow passing program arguments via -Pargs="arg1 arg2"
-    if (project.hasProperty('args')) {
-        args project.args.split()
-    }
+  // Allow passing program arguments via -Pargs="arg1 arg2"
+  if (project.hasProperty('args')) {
+    args project.args.split()
+  }
 }
 
 shadowJar {
-    archiveBaseName.set('web-page-analyzer')
-    archiveClassifier.set('')
-    archiveVersion.set(project.version)
+  archiveBaseName.set('web-page-analyzer')
+  archiveClassifier.set('')
+  archiveVersion.set(project.version)
 }
 
 // Distribution tasks
 tasks.register('createDistribution', Copy) {
-    dependsOn tasks.named('shadowJar')
-    from layout.buildDirectory.file("libs/web-page-analyzer-${version}.jar")
-    into layout.buildDirectory.dir("distribution")
-    rename { filename -> 'web-page-analyzer.jar' }
+  dependsOn tasks.named('shadowJar')
+  from layout.buildDirectory.file("libs/web-page-analyzer-${version}.jar")
+  into layout.buildDirectory.dir("distribution")
+  rename { filename -> 'web-page-analyzer.jar' }
 
-    doLast {
-        def jarFile = layout.buildDirectory.file("distribution/web-page-analyzer.jar").get().asFile
-        jarFile.setExecutable(true, false)
-    }
+  doLast {
+    def jarFile = layout.buildDirectory.file("distribution/web-page-analyzer.jar").get().asFile
+    jarFile.setExecutable(true, false)
+  }
 }
 
 tasks.register('createScripts') {
-    dependsOn tasks.named('createDistribution')
-    doLast {
-        def scriptDir = layout.buildDirectory.dir("distribution").get().asFile
-        scriptDir.mkdirs()
+  dependsOn tasks.named('createDistribution')
+  doLast {
+    def scriptDir = layout.buildDirectory.dir("distribution").get().asFile
+    scriptDir.mkdirs()
 
-        // Create Unix shell script
-        def unixScript = new File(scriptDir, 'web-page-analyzer')
-        unixScript.text = """#!/bin/sh
-java --enable-preview -jar "\$(dirname "\$0")/web-page-analyzer.jar" "\$@"
+    // Create Unix shell script without --enable-preview
+    def unixScript = new File(scriptDir, 'web-page-analyzer')
+    unixScript.text = """#!/bin/sh
+java -jar "\$(dirname "\$0")/web-page-analyzer.jar" "\$@"
 """
-        unixScript.setExecutable(true, false)
+    unixScript.setExecutable(true, false)
 
-        // Create Windows batch script
-        def windowsScript = new File(scriptDir, 'web-page-analyzer.bat')
-        windowsScript.text = """@echo off
-java --enable-preview -jar "%~dp0web-page-analyzer.jar" %*
+    // Create Windows batch script without --enable-preview
+    def windowsScript = new File(scriptDir, 'web-page-analyzer.bat')
+    windowsScript.text = """@echo off
+java -jar "%~dp0web-page-analyzer.jar" %*
 """
-    }
+  }
 }
 
 tasks.register('dist') {
-    dependsOn tasks.named('createDistribution'), tasks.named('createScripts')
-    description = 'Creates a distributable package with executable scripts'
-    group = 'distribution'
+  dependsOn tasks.named('createDistribution'), tasks.named('createScripts')
+  description = 'Creates a distributable package with executable scripts'
+  group = 'distribution'
 }

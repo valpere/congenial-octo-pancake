@@ -13,8 +13,8 @@ A command-line tool written in Groovy for retrieving, parsing, analyzing, and tr
 
 ## Requirements
 
-- Java 21
-- Gradle 8.0.13
+- Java 21+
+- Gradle 8.13.0+
 
 ## Building the Project
 
@@ -30,7 +30,7 @@ To create a distributable package:
 ./gradlew dist
 ```
 
-This will create a standalone JAR with all dependencies and wrapper scripts in `build/distribution/`.
+This will create a standalone JAR with all dependencies and wrapper scripts in `app/build/distribution/`.
 
 ## Usage
 
@@ -43,7 +43,7 @@ This will create a standalone JAR with all dependencies and wrapper scripts in `
 ### Using the distribution package:
 
 ```bash
-cd build/distribution
+cd app/build/distribution
 ./web-page-analyzer parse input.html output.json
 ```
 
@@ -99,45 +99,81 @@ web-page-analyzer stats <input-html-file> <output-file> [--format=json|txt]
 Options:
 - `--format` - Output format (json, txt) (default: json)
 
+### Compare HTML Files
+
+Compare two HTML files and identify differences.
+
+```bash
+web-page-analyzer compare <file1> <file2> <output-file> [--mode=structure|content|visual] [--selector="css-selector"] [--ignore-attributes=attr1,attr2,...]
+```
+
+Options:
+- `--mode` - Comparison mode (structure, content, visual) (default: content)
+- `--selector` - Limit comparison to elements matching selector
+- `--ignore-attributes` - Comma-separated list of attributes to ignore in comparison
+
+### Transform HTML
+
+Transform HTML to another format.
+
+```bash
+web-page-analyzer transform <input-html-file> <output-file> [--format=markdown|plain|json] [--preserve-links=true|false] [--include-images=true|false]
+```
+
+Options:
+- `--format` - Output format (markdown, plain, json) (default: markdown)
+- `--preserve-links` - Maintain hyperlinks in output (default: true)
+- `--include-images` - Include image references (default: true)
+
 ## Project Structure
 
 ```
 web-page-analyzer/
-├── src/
-│   ├── main/
-│   │   ├── groovy/
-│   │   │   └── com/webanalyzer/
-│   │   │       ├── cli/ (Command line interface)
-│   │   │       │   ├── WebPageAnalyzer.groovy (Main class)
-│   │   │       │   └── commands/ (Command implementations)
-│   │   │       └── core/ (Core functionality)
-│   │   │           ├── parser/ (HTML parsing)
-│   │   │           ├── fetcher/ (Web page fetching)
-│   │   │           ├── transformer/ (Format transformations)
-│   │   │           └── analyzer/ (Analysis tools)
-│   │   └── resources/
-│   │       └── logback.xml (Logging configuration)
-│   └── test/
-│       └── groovy/
-│           └── com/webanalyzer/ (Test classes)
-├── build.gradle
-├── settings.gradle
-└── README.md
+├── app/                          # Main application module
+│   ├── build/                    # Build outputs
+│   │   ├── classes/              # Compiled classes
+│   │   ├── distribution/         # Distribution package
+│   │   ├── libs/                 # Generated JARs
+│   │   └── resources/            # Processed resources
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── groovy/
+│   │   │   │   └── com/webanalyzer/
+│   │   │   │       ├── cli/      # Command line interface
+│   │   │   │       │   ├── WebPageAnalyzer.groovy   # Main class
+│   │   │   │       │   └── commands/                # Command implementations
+│   │   │   │       └── core/     # Core functionality
+│   │   │   │           ├── parser/     # HTML parsing
+│   │   │   │           ├── fetcher/    # Web page fetching
+│   │   │   │           ├── transformer/ # Format transformations
+│   │   │   │           └── analyzer/   # Analysis tools
+│   │   │   └── resources/
+│   │   │       └── logback.xml   # Logging configuration
+│   │   └── test/
+│   │       └── groovy/
+│   │           └── com/webanalyzer/ # Test classes
+│   └── build.gradle              # App-specific build configuration
+├── build/                        # Root project build directory
+├── gradle/                       # Gradle wrapper files
+│   ├── libs.versions.toml        # Dependency version catalog
+│   └── wrapper/                  
+├── gradlew                       # Gradle wrapper script (Unix)
+├── gradlew.bat                   # Gradle wrapper script (Windows)
+├── settings.gradle               # Project settings
+└── README.md                     # This file
 ```
 
-## Adding Dynamic Page Support
+## Library Dependencies
 
-To enable the dynamic page fetching feature (with JavaScript rendering), add the following dependencies to your `build.gradle`:
+The project uses a variety of libraries:
 
-```groovy
-dependencies {
-    // For dynamic page rendering
-    implementation 'org.seleniumhq.selenium:selenium-java:4.17.0'
-    implementation 'org.seleniumhq.selenium:selenium-chrome-driver:4.17.0'
-}
-```
-
-You'll also need to have Chrome installed and the appropriate ChromeDriver for your Chrome version.
+- **Groovy** - For core programming language features
+- **Picocli** - For CLI parsing and command structure
+- **JSoup** - For HTML parsing and manipulation
+- **Selenium/WebDriver** - For dynamic web page rendering
+- **Apache HttpClient** - For HTTP requests
+- **Logback/SLF4J** - For logging
+- **Spock Framework** - For testing
 
 ## License
 

@@ -1,14 +1,23 @@
 package com.webanalyzer.core.fetcher
 
+import io.github.bonigarcia.wdm.WebDriverManager
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.config.RequestConfig
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
 import org.apache.hc.client5.http.impl.classic.HttpClients
 import org.apache.hc.core5.http.HttpStatus
 import org.apache.hc.core5.http.io.entity.EntityUtils
+import org.openqa.selenium.By
+import org.openqa.selenium.JavascriptExecutor
+import org.openqa.selenium.WebDriver
+import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeOptions
+import org.openqa.selenium.support.ui.ExpectedConditions
+import org.openqa.selenium.support.ui.WebDriverWait
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 /**
@@ -99,68 +108,74 @@ class WebPageFetcher {
     logger.debug("Fetching dynamic page: ${url} with wait time: ${options.wait}ms")
 
     try {
-      // Note: The following code is commented to prevent compilation errors when Selenium is not available
-      // In a real project, this would be uncommented and the dependencies would be included
-
-      /*
       // Set up WebDriver manager to handle driver setup automatically
       WebDriverManager.chromedriver().setup()
 
       // Configure Chrome options for headless operation
       ChromeOptions chromeOptions = new ChromeOptions()
-      chromeOptions.addArguments("--headless")
+      chromeOptions.addArguments("--headless=new")
       chromeOptions.addArguments("--disable-gpu")
       chromeOptions.addArguments("--window-size=1920,1080")
       chromeOptions.addArguments("--disable-extensions")
       chromeOptions.addArguments("--no-sandbox")
       chromeOptions.addArguments("--disable-dev-shm-usage")
 
+      // Add these additional options to improve reliability
+      chromeOptions.addArguments("--ignore-certificate-errors")
+      chromeOptions.addArguments("--disable-popup-blocking")
+      chromeOptions.addArguments("--disable-notifications")
+
       // Set user agent if specified
       if (options.userAgent) {
-          chromeOptions.addArguments("--user-agent=${options.userAgent}")
+        chromeOptions.addArguments("--user-agent=${options.userAgent}")
       }
 
       // Create the WebDriver instance
       WebDriver driver = new ChromeDriver(chromeOptions)
 
       try {
-          // Set page load timeout
-          driver.manage().timeouts().pageLoadTimeout(Duration.ofMillis(options.timeout))
+        // Set page load timeout
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofMillis(options.timeout))
 
-          // Navigate to the URL
-          driver.get(url)
+        // Navigate to the URL
+        logger.debug("Navigating to URL: ${url}")
+        driver.get(url)
+        logger.debug("Page loaded successfully")
 
-          // Wait for dynamic content to load if wait time is specified
-          if (options.wait > 0) {
-              Thread.sleep(options.wait)
-          }
+        // Wait for dynamic content to load if wait time is specified
+        if (options.wait > 0) {
+          logger.debug("Waiting for ${options.wait}ms for dynamic content to load")
+          Thread.sleep(options.wait)
+        }
 
-          // If specific wait conditions are provided, wait for them
-          if (options.waitForSelector) {
-              WebDriverWait wait = new WebDriverWait(driver, Duration.ofMillis(options.timeout))
-              wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(options.waitForSelector)))
-          }
+        // If specific wait conditions are provided, wait for them
+        if (options.waitForSelector) {
+          logger.debug("Waiting for selector: ${options.waitForSelector}")
+          WebDriverWait wait = new WebDriverWait(driver, Duration.ofMillis(options.timeout))
+          wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(options.waitForSelector)))
+          logger.debug("Selector found")
+        }
 
-          // Execute any custom JavaScript if provided
-          if (options.customJavaScript) {
-              JavascriptExecutor js = (JavascriptExecutor) driver
-              js.executeScript(options.customJavaScript)
+        // Execute any custom JavaScript if provided
+        if (options.customJavaScript) {
+          logger.debug("Executing custom JavaScript")
+          JavascriptExecutor js = (JavascriptExecutor) driver
+          js.executeScript(options.customJavaScript)
+          logger.debug("Custom JavaScript executed successfully")
 
-              // Give a short time for the script to complete
-              Thread.sleep(500)
-          }
+          // Give a short time for the script to complete
+          Thread.sleep(500)
+        }
 
-          // Get the rendered page source
-          return driver.getPageSource()
+        // Get the rendered page source
+        String pageSource = driver.getPageSource()
+        logger.debug("Page source retrieved, length: ${pageSource.length()} characters")
+        return pageSource
       } finally {
-          // Always quit the driver to release resources
-          driver.quit()
+        // Always quit the driver to release resources
+        logger.debug("Closing WebDriver")
+        driver.quit()
       }
-      */
-
-      // Temporary implementation until Selenium is properly integrated
-      throw new FetchException("Dynamic page fetching requires Selenium WebDriver. " +
-          "Please add the necessary dependencies and uncomment the implementation.")
     } catch (Exception e) {
       logger.error("Error fetching page dynamically: ${e.message}", e)
       throw new FetchException("Failed to fetch dynamic page: ${e.message}", e)

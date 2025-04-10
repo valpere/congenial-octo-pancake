@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Content Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        #dynamic-content {
+            background-color: #f0f0f0;
+            padding: 15px;
+            min-height: 100px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            display: none; /* Hidden initially */
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        #loading {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dynamic Content Test Page</h1>
+    <p>This page contains JavaScript-generated content to test the WebPageAnalyzer's dynamic fetching capabilities.</p>
+    
+    <div class="container">
+        <h2>Static Content</h2>
+        <p>This paragraph is static HTML that is immediately visible when the page loads.</p>
+    </div>
+    
+    <div class="container">
+        <h2>Delayed Content (3 seconds)</h2>
+        <p>The content below will appear 3 seconds after the page loads:</p>
+        <div id="delayed-content">
+            <p id="loading">Loading...</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>Interactive Dynamic Content</h2>
+        <p>Click the buttons below to generate dynamic content:</p>
+        <button id="load-data">Load Data Table</button>
+        <button id="add-element">Add New Element</button>
+        <button id="change-styles">Change Styles</button>
+        
+        <div id="dynamic-content">
+            <p>Dynamic content will appear here when buttons are clicked.</p>
+        </div>
+        
+        <table id="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Value</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+    
+    <script>
+        // Delayed content that appears after 3 seconds
+        document.getElementById('loading').style.display = 'block';
+        
+        setTimeout(() => {
+            const delayedContent = document.getElementById('delayed-content');
+            document.getElementById('loading').style.display = 'none';
+            
+            const message = document.createElement('div');
+            message.innerHTML = `<p>This content was dynamically added 3 seconds after page load.</p>
+                                <p>Current time: ${new Date().toLocaleTimeString()}</p>`;
+            delayedContent.appendChild(message);
+        }, 3000);
+        
+        // Interactive buttons functionality
+        document.getElementById('load-data').addEventListener('click', function() {
+            const table = document.getElementById('data-table');
+            const tbody = table.querySelector('tbody');
+            
+            // Clear existing rows
+            tbody.innerHTML = '';
+            
+            // Generate random data
+            for (let i = 1; i <= 5; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i}</td>
+                    <td>Item ${i}</td>
+                    <td>${Math.floor(Math.random() * 1000)}</td>
+                    <td>${Math.random() > 0.5 ? 'Active' : 'Inactive'}</td>
+                `;
+                tbody.appendChild(row);
+            }
+            
+            // Show the table
+            table.style.display = 'table';
+        });
+        
+        document.getElementById('add-element').addEventListener('click', function() {
+            const container = document.getElementById('dynamic-content');
+            const newElement = document.createElement('div');
+            newElement.style.margin = '10px 0';
+            newElement.style.padding = '10px';
+            newElement.style.border = '1px solid #ddd';
+            newElement.innerHTML = `<p>New element added at: ${new Date().toLocaleTimeString()}</p>`;
+            container.appendChild(newElement);
+        });
+        
+        document.getElementById('change-styles').addEventListener('click', function() {
+            const container = document.getElementById('dynamic-content');
+            const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+            container.style.backgroundColor = randomColor;
+            container.style.color = isLightColor(randomColor) ? '#000' : '#fff';
+        });
+        
+        // Helper function to determine if a color is light or dark
+        function isLightColor(color) {
+            // Convert hex to RGB
+            const hex = color.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            
+            // Calculate brightness
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            return brightness > 128;
+        }
+    </script>
+</body>
+</html>

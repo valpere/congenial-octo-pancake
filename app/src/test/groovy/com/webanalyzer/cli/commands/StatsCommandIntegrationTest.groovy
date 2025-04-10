@@ -256,7 +256,7 @@ class StatsCommandIntegrationTest extends Specification {
             <html>
                 <head><title>Internationalization Test</title></head>
                 <body>
-                    <h1>Привет мир</h1>
+                    <h1>Привіт світе</h1>
                     <p>你好世界</p>
                     <p>こんにちは世界</p>
                 </body>
@@ -275,7 +275,7 @@ class StatsCommandIntegrationTest extends Specification {
     exitCode == 0
     outputFile.exists()
     def content = outputFile.text
-    content.contains("Привет мир")
+    content.contains("Привіт світе")
     content.contains("你好世界")
     content.contains("こんにちは世界")
     !content.contains("\\u")  // No Unicode escape sequences

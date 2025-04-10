@@ -232,7 +232,7 @@ class ExtractCommandIntegrationTest extends Specification {
     given:
     def htmlFile = createTempHtmlFile('''
             <html><body>
-                <p lang="ru">Привет мир</p>
+                <p lang="ru">Привіт світе</p>
                 <p lang="zh">你好世界</p>
             </body></html>
         ''')
@@ -250,7 +250,7 @@ class ExtractCommandIntegrationTest extends Specification {
     exitCode == 0
     outputFile.exists()
     def content = outputFile.text
-    content.contains("Привет мир")
+    content.contains("Привіт світе")
     content.contains("你好世界")
     !content.contains("\\u")  // No Unicode escape sequences
   }

@@ -321,7 +321,7 @@ class TransformCommandIntegrationTest extends Specification {
             <html>
                 <head><title>Internationalization Test</title></head>
                 <body>
-                    <h1>Привет мир</h1>
+                    <h1>Привіт світе</h1>
                     <p>你好世界</p>
                     <p>こんにちは世界</p>
                 </body>
@@ -355,11 +355,11 @@ class TransformCommandIntegrationTest extends Specification {
     def mdContent = mdOutput.text
     def jsonContent = jsonOutput.text
 
-    mdContent.contains('# Привет мир')
+    mdContent.contains('# Привіт світе')
     mdContent.contains('你好世界')
     mdContent.contains('こんにちは世界')
 
-    jsonContent.contains('Привет мир')
+    jsonContent.contains('Привіт світе')
     jsonContent.contains('你好世界')
     jsonContent.contains('こんにちは世界')
 

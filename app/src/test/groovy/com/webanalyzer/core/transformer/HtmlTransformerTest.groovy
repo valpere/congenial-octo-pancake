@@ -122,7 +122,7 @@ class HtmlTransformerTest extends Specification {
             <html>
                 <head><title>Test Document</title></head>
                 <body>
-                    <h1>Привет мир</h1>
+                    <h1>Привіт світе</h1>
                     <p>你好世界</p>
                 </body>
             </html>
@@ -135,11 +135,11 @@ class HtmlTransformerTest extends Specification {
     def jsonResult = transformer.transformFile(htmlFile, "json", options)
 
     then:
-    markdownResult.contains("# Привет мир")
+    markdownResult.contains("# Привіт світе")
     markdownResult.contains("你好世界")
     plainResult.contains("ПРИВЕТ МИР")
     plainResult.contains("你好世界")
-    jsonResult.contains("Привет мир")
+    jsonResult.contains("Привіт світе")
     jsonResult.contains("你好世界")
     !jsonResult.contains("\\u")  // No Unicode escape sequences
   }

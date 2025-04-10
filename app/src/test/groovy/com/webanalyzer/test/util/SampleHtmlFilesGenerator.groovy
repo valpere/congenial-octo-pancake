@@ -275,8 +275,8 @@ function testFunction() {
 <body>
     <h1>International Characters Test</h1>
     
-    <h2>Cyrillic (Russian)</h2>
-    <p>Привет мир! Это тестовый текст на русском языке.</p>
+    <h2>Cyrillic (Ukrainian)</h2>
+    <p>Привіт світе! Це тестовий текст українською мовою.</p>
     
     <h2>Chinese (Simplified)</h2>
     <p>你好世界！这是中文测试文本。</p>

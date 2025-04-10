@@ -354,7 +354,7 @@ class CompareCommandIntegrationTest extends Specification {
   def "should handle non-ASCII characters correctly in output"() {
     given:
     def html1 = '''
-            <html><body><p>Привет мир</p></body></html>
+            <html><body><p>Привіт світе</p></body></html>
         '''
     def html2 = '''
             <html><body><p>こんにちは世界</p></body></html>
@@ -375,7 +375,7 @@ class CompareCommandIntegrationTest extends Specification {
     exitCode == 0
     outputFile.exists()
     def content = outputFile.text
-    content.contains("Привет мир")
+    content.contains("Привіт світе")
     content.contains("こんにちは世界")
     !content.contains("\\u")  // No Unicode escape sequences
   }

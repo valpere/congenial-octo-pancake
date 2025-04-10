@@ -38,14 +38,14 @@ class HtmlParserTest extends Specification {
   def "should preserve UTF-8 characters"() {
     given:
     def parser = new HtmlParser()
-    def htmlContent = "<html><body><p>Привет мир</p><p>你好世界</p><p>こんにちは世界</p></body></html>"
+    def htmlContent = "<html><body><p>Привіт світе</p><p>你好世界</p><p>こんにちは世界</p></body></html>"
     def htmlFile = createTempHtmlFile(htmlContent)
 
     when:
     def result = parser.parseToJson(htmlFile, StandardCharsets.UTF_8, true, false)
 
     then:
-    result.contains("Привет мир")
+    result.contains("Привіт світе")
     result.contains("你好世界")
     result.contains("こんにちは世界")
     !result.contains("\\u")  // Should not contain Unicode escape sequences

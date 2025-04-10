@@ -164,7 +164,7 @@ class ElementExtractorTest extends Specification {
     def htmlFile = createTempHtmlFile('''
             <html>
                 <body>
-                    <p>Привет мир</p>
+                    <p>Привіт світе</p>
                     <p>你好世界</p>
                 </body>
             </html>
@@ -177,7 +177,7 @@ class ElementExtractorTest extends Specification {
     def result = extractor.extractFromFile(htmlFile, "p", options)
 
     then:
-    result.contains("Привет мир")
+    result.contains("Привіт світе")
     result.contains("你好世界")
     !result.contains("\\u")  // No Unicode escape sequences
   }

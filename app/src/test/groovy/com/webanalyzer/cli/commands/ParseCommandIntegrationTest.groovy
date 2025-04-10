@@ -44,7 +44,7 @@ class ParseCommandIntegrationTest extends Specification {
   @Timeout(10)
   def "should parse HTML file with non-ASCII characters"() {
     given:
-    def htmlFile = createTempHtmlFile("<html><body><p>Привет мир</p><p>你好世界</p></body></html>")
+    def htmlFile = createTempHtmlFile("<html><body><p>Привіт світе</p><p>你好世界</p></body></html>")
     def outputFile = tempDir.resolve("output.json").toFile()
 
     when:
@@ -54,7 +54,7 @@ class ParseCommandIntegrationTest extends Specification {
     exitCode == 0
     outputFile.exists()
     def content = outputFile.text
-    content.contains("Привет мир")
+    content.contains("Привіт світе")
     content.contains("你好世界")
     !content.contains("\\u")  // Should not contain Unicode escape sequences
   }

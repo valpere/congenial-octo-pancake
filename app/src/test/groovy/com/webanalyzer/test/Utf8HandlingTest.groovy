@@ -31,14 +31,14 @@ class Utf8HandlingTest extends Specification {
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>UTF-8 Характер Тест</title>
+    <title>UTF-8 Букви Тест</title>
 </head>
 <body>
     <h1>UTF-8 Character Test / Тест символов UTF-8</h1>
     
     <div id="cyrillic" class="language-section">
-        <h2>Cyrillic / Кириллица</h2>
-        <p>Русский: Все люди рождаются свободными и равными в своем достоинстве и правах.</p>
+        <h2>Cyrillic / Кирилиця</h2>
+        <p>Български: Всички човешки същества се раждат свободни и равни по достойнство и права.</p>
         <p>Українська: Всі люди народжуються вільними і рівними у своїй гідності та правах.</p>
         <p>Беларуская: Усе людзі нараджаюцца свабоднымі і роўнымі ў сваёй годнасці і правах.</p>
     </div>
@@ -79,8 +79,8 @@ class Utf8HandlingTest extends Specification {
 
     then:
     // Check for the presence of various non-ASCII characters in the output
-    jsonResult.contains("UTF-8 Характер Тест")
-    jsonResult.contains("Кириллица")
+    jsonResult.contains("UTF-8 Букви Тест")
+    jsonResult.contains("Кирилиця")
     jsonResult.contains("Українська")
     jsonResult.contains("亚洲语言")
     jsonResult.contains("日本語")
@@ -106,18 +106,18 @@ class Utf8HandlingTest extends Specification {
 
     then:
     // Verify characters in Markdown output
-    markdownResult.contains("UTF-8 Характер Тест")
+    markdownResult.contains("UTF-8 Букви Тест")
     markdownResult.contains("简体中文")
     markdownResult.contains("Ελληνικά")
 
     // Verify characters in JSON output
-    jsonResult.contains("UTF-8 Характер Тест")
+    jsonResult.contains("UTF-8 Букви Тест")
     jsonResult.contains("한국어")
     jsonResult.contains("العربية")
     !jsonResult.contains("\\u")
 
     // Verify characters in plain text output
-    plainResult.contains("UTF-8 Характер Тест")
+    plainResult.contains("UTF-8 Букви Тест")
     plainResult.contains("हिन्दी")
     plainResult.contains("ไทย")
   }
@@ -135,7 +135,7 @@ class Utf8HandlingTest extends Specification {
 
     then:
     // Cyrillic content extraction
-    cyrillicResult.contains("Русский")
+    cyrillicResult.contains("Български")
     cyrillicResult.contains("Українська")
     cyrillicResult.contains("Беларуская")
 
@@ -175,7 +175,7 @@ class Utf8HandlingTest extends Specification {
     def title = parsedJson.children.find { it.tagName == "head" }?.children?.find { it.tagName == "title" }?.text
 
     // Verify the retrieved values contain the correct UTF-8 characters
-    title == "UTF-8 Характер Тест"
+    title == "UTF-8 Букви Тест"
   }
 
   def "should preserve UTF-8 characters in analyzer output"() {
@@ -195,8 +195,8 @@ class Utf8HandlingTest extends Specification {
     def jsonResult = jsonGenerator.toJson(stats)
 
     // Verify UTF-8 characters are preserved
-    jsonResult.contains("UTF-8 Характер Тест") // Title
-    jsonResult.contains("Кириллица") // Heading
+    jsonResult.contains("UTF-8 Букви Тест") // Title
+    jsonResult.contains("Кирилиця") // Heading
     jsonResult.contains("Українська") // Text content
     jsonResult.contains("简体中文") // Asian text
 

@@ -64,18 +64,17 @@ jar {
   }
 }
 
-// Enable preview features
 tasks.withType(JavaCompile).configureEach {
-//  options.compilerArgs += '--enable-preview'
+  // Removed --enable-preview flags as we're using Java 21 LTS
 }
 
 tasks.withType(Test).configureEach {
-//  jvmArgs += '--enable-preview'
+  // Removed --enable-preview flags
   useJUnitPlatform()
 }
 
 tasks.withType(JavaExec).configureEach {
-//  jvmArgs += '--enable-preview'
+  // Removed --enable-preview flags
 }
 
 tasks.named('run', JavaExec) {
@@ -113,14 +112,14 @@ tasks.register('createScripts') {
     def scriptDir = layout.buildDirectory.dir("distribution").get().asFile
     scriptDir.mkdirs()
 
-    // Create Unix shell script without --enable-preview
+    // Create Unix shell script
     def unixScript = new File(scriptDir, 'web-page-analyzer')
     unixScript.text = """#!/bin/sh
 java -jar "\$(dirname "\$0")/web-page-analyzer.jar" "\$@"
 """
     unixScript.setExecutable(true, false)
 
-    // Create Windows batch script without --enable-preview
+    // Create Windows batch script
     def windowsScript = new File(scriptDir, 'web-page-analyzer.bat')
     windowsScript.text = """@echo off
 java -jar "%~dp0web-page-analyzer.jar" %*

@@ -8,6 +8,8 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import java.nio.charset.Charset
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.concurrent.Callable
 
 /**
@@ -49,21 +51,17 @@ class ParseCommand implements Callable<Integer> {
     }
 
     try {
-      // Parse the HTML and convert to JSON
-      def parser = new HtmlParser()
-      def jsonResult = parser.parseToJson(
+      // Use the HtmlParser service to handle the parsing and JSON conversion
+      HtmlParser parser = new HtmlParser()
+      String jsonResult = parser.parseToJson(
           input,
           Charset.forName(encoding),
-          includeText
+          includeText,
+          pretty
       )
 
-      // Write to output file
-      def output = new File(outputFile)
-      if (pretty) {
-        output.text = jsonResult.toPrettyString()
-      } else {
-        output.text = jsonResult.toString()
-      }
+      // Write the output with explicit UTF-8 encoding
+      Files.write(Paths.get(outputFile), jsonResult.getBytes(encoding))
 
       logger.info("Successfully parsed HTML to JSON: ${outputFile}")
       System.out.println("Successfully parsed HTML to JSON: ${outputFile}")

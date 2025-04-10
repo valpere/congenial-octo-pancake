@@ -58,6 +58,7 @@ web-page-analyzer parse <input-html-file> <output-json-file> [--pretty] [--inclu
 ```
 
 Options:
+
 - `--pretty` - Format the JSON output with indentation
 - `--include-text` - Include text content in the JSON (default: true)
 - `--encoding` - File encoding (default: UTF-8)
@@ -71,6 +72,7 @@ web-page-analyzer read <url> <output-html-file> [--dynamic] [--wait=5000] [--tim
 ```
 
 Options:
+
 - `--dynamic` - Use a headless browser to render JavaScript (default: false)
 - `--wait` - Time to wait for dynamic content to load in ms (default: 5000)
 - `--timeout` - Connection timeout in seconds (default: 30)
@@ -85,6 +87,7 @@ web-page-analyzer extract <input-html-file> <css-selector> <output-file> [--form
 ```
 
 Options:
+
 - `--format` - Output format (json, csv, txt) (default: json)
 - `--attributes` - Comma-separated list of attributes to extract (default: all)
 
@@ -97,6 +100,7 @@ web-page-analyzer stats <input-html-file> <output-file> [--format=json|txt]
 ```
 
 Options:
+
 - `--format` - Output format (json, txt) (default: json)
 
 ### Compare HTML Files
@@ -108,6 +112,7 @@ web-page-analyzer compare <file1> <file2> <output-file> [--mode=structure|conten
 ```
 
 Options:
+
 - `--mode` - Comparison mode (structure, content, visual) (default: content)
 - `--selector` - Limit comparison to elements matching selector
 - `--ignore-attributes` - Comma-separated list of attributes to ignore in comparison
@@ -121,6 +126,7 @@ web-page-analyzer transform <input-html-file> <output-file> [--format=markdown|p
 ```
 
 Options:
+
 - `--format` - Output format (markdown, plain, json) (default: markdown)
 - `--preserve-links` - Maintain hyperlinks in output (default: true)
 - `--include-images` - Include image references (default: true)

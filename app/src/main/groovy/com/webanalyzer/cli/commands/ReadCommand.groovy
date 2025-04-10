@@ -12,6 +12,7 @@ import java.util.concurrent.Callable
 
 /**
  * Command to retrieve a web page by URL and save it as HTML.
+ * This updated version uses the enhanced WebPageFetcher with additional options.
  */
 @Command(
     name = "read",
@@ -39,6 +40,18 @@ class ReadCommand implements Callable<Integer> {
   @Option(names = ["--user-agent"], description = "Custom user agent")
   private String userAgent = "WebPageAnalyzer/1.0"
 
+  @Option(names = ["--encoding"], description = "Character encoding for output")
+  private String encoding = "UTF-8"
+
+  @Option(names = ["--wait-for-selector"], description = "CSS selector to wait for when using dynamic mode")
+  private String waitForSelector
+
+  @Option(names = ["--execute-js"], description = "Custom JavaScript to execute after page load")
+  private String executeJs
+
+  @Option(names = ["--headers"], description = "Custom HTTP headers in format 'name1=value1,name2=value2'")
+  private String headers
+
   @Override
   Integer call() throws Exception {
     // Basic URL validation
@@ -50,21 +63,36 @@ class ReadCommand implements Callable<Integer> {
     logger.info("Fetching web page: ${url}")
 
     try {
-      // Configure fetch options
+      // Parse custom headers if provided
+      Map<String, String> headerMap = [:]
+      if (headers) {
+        headers.split(",").each { header ->
+          def parts = header.split("=", 2)
+          if (parts.length == 2) {
+            headerMap[parts[0].trim()] = parts[1].trim()
+          }
+        }
+      }
+
+      // Configure fetch options with all the enhanced parameters
       def options = new FetchOptions(
           dynamic: dynamic,
           wait: wait,
           timeout: timeout * 1000,
-          userAgent: userAgent
+          userAgent: userAgent,
+          encoding: encoding,
+          waitForSelector: waitForSelector,
+          customJavaScript: executeJs,
+          headers: headerMap
       )
 
       // Fetch the web page
       def fetcher = new WebPageFetcher()
       def html = fetcher.fetchPage(url, options)
 
-      // Save to file
+      // Save to file with proper encoding
       def output = new File(outputFile)
-      output.text = html
+      output.setText(html, encoding)
 
       logger.info("Successfully downloaded page from ${url} to ${outputFile}")
       System.out.println("Successfully downloaded page from ${url} to ${outputFile}")

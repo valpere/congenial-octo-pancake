@@ -1,8 +1,9 @@
 package com.webanalyzer.cli.commands
 
+import com.webanalyzer.core.analyzer.AnalyzerOptions
+import com.webanalyzer.core.analyzer.HtmlAnalyzer
 import groovy.json.JsonBuilder
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
+import groovy.json.JsonGenerator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import picocli.CommandLine.Command
@@ -13,6 +14,7 @@ import java.util.concurrent.Callable
 
 /**
  * Command to generate statistics about an HTML document.
+ * This updated version uses the HtmlAnalyzer service for analysis.
  */
 @Command(
     name = "stats",
@@ -22,6 +24,11 @@ import java.util.concurrent.Callable
 class StatsCommand implements Callable<Integer> {
   private static final Logger logger = LoggerFactory.getLogger(StatsCommand.class)
 
+  // Configure JsonGenerator to prevent Unicode escaping
+  private static final JsonGenerator generator = new JsonGenerator.Options()
+      .disableUnicodeEscaping()
+      .build()
+
   @Parameters(index = "0", description = "Input HTML file path")
   private String inputFile
 
@@ -30,6 +37,12 @@ class StatsCommand implements Callable<Integer> {
 
   @Option(names = ["--format"], description = "Output format (json, txt)")
   private String format = "json"
+
+  @Option(names = ["--encoding"], description = "File encoding")
+  private String encoding = "UTF-8"
+
+  @Option(names = ["--include"], description = "Comma-separated list of stats to include (all, basic, elements, links, structure, content, performance)")
+  private String include = "all"
 
   @Override
   Integer call() throws Exception {
@@ -43,138 +56,27 @@ class StatsCommand implements Callable<Integer> {
         return 1
       }
 
-      // Parse HTML document
-      Document document = Jsoup.parse(input, "UTF-8")
+      // Parse include options
+      AnalyzerOptions options = parseOptions()
 
-      // Calculate statistics
-      def stats = [:]
+      // Generate statistics using the analyzer
+      HtmlAnalyzer analyzer = new HtmlAnalyzer()
+      Map<String, Object> stats = analyzer.analyzeFile(input, options)
 
-      // Basic document info
-      stats.title = document.title()
-      stats.doctype = document.documentType()?.toString() ?: "None"
-      stats.charset = document.charset().name()
-      stats.fileSize = input.length()
-
-      // Element counts
-      def allElements = document.getAllElements()
-      stats.totalElements = allElements.size()
-
-      // Count by tag name
-      def tagCounts = [:]
-      allElements.each { element ->
-        def tag = element.tagName().toLowerCase()
-        tagCounts[tag] = (tagCounts[tag] ?: 0) + 1
-      }
-      stats.elementsByTag = tagCounts
-
-      // Link analysis
-      def links = document.select("a[href]")
-      stats.totalLinks = links.size()
-
-      def linkTypes = [
-          internal  : 0,
-          external  : 0,
-          mailto    : 0,
-          javascript: 0,
-          anchor    : 0,
-          other     : 0
-      ]
-
-      links.each { link ->
-        def href = link.attr("href").trim()
-        if (href.startsWith("#")) {
-          linkTypes.anchor++
-        } else if (href.startsWith("mailto:")) {
-          linkTypes.mailto++
-        } else if (href.startsWith("javascript:")) {
-          linkTypes.javascript++
-        } else if (href.startsWith("http://") || href.startsWith("https://")) {
-          linkTypes.external++
-        } else if (href) {
-          linkTypes.internal++
-        } else {
-          linkTypes.other++
-        }
-      }
-      stats.linkTypes = linkTypes
-
-      // Images
-      stats.totalImages = document.select("img").size()
-
-      // Form elements
-      stats.forms = document.select("form").size()
-      stats.inputFields = document.select("input").size()
-
-      // Scripts and styles
-      stats.scripts = document.select("script").size()
-      stats.styleSheets = document.select("link[rel=stylesheet]").size()
-      stats.inlineStyles = document.select("style").size()
-
-      // DOM depth
-      def maxDepth = 0
-      def calculateDepth
-      calculateDepth = { element, depth ->
-        if (depth > maxDepth) maxDepth = depth
-        element.children().each { child ->
-          calculateDepth(child, depth + 1)
-        }
-      }
-      calculateDepth(document.body(), 0)
-      stats.maxDOMDepth = maxDepth
-
-      // Text statistics
-      def text = document.text()
-      stats.textLength = text.length()
-      stats.wordCount = text.split(/\s+/).length
-
-      // Output data in requested format
-      File output = new File(outputFile)
+      // Format output based on requested format
+      String outputContent
       if (format.toLowerCase() == "json") {
-        output.text = new JsonBuilder(stats).toPrettyString()
+        def jsonBuilder = new JsonBuilder(stats)
+        jsonBuilder.setGenerator(generator)
+        outputContent = jsonBuilder.toPrettyString()
       } else {
         // Text format
-        def result = new StringBuilder()
-        result.append("Web Page Statistics\n")
-        result.append("=================\n\n")
-
-        result.append("Document Information:\n")
-        result.append("  Title: ${stats.title}\n")
-        result.append("  Doctype: ${stats.doctype}\n")
-        result.append("  Charset: ${stats.charset}\n")
-        result.append("  File Size: ${stats.fileSize} bytes\n\n")
-
-        result.append("Element Counts:\n")
-        result.append("  Total Elements: ${stats.totalElements}\n")
-        result.append("  Top 10 Elements by Tag:\n")
-        stats.elementsByTag.sort { -it.value }.take(10).each { tag, count ->
-          result.append("    ${tag}: ${count}\n")
-        }
-        result.append("\n")
-
-        result.append("Link Analysis:\n")
-        result.append("  Total Links: ${stats.totalLinks}\n")
-        stats.linkTypes.each { type, count ->
-          result.append("  ${type.capitalize()}: ${count}\n")
-        }
-        result.append("\n")
-
-        result.append("Other Elements:\n")
-        result.append("  Images: ${stats.totalImages}\n")
-        result.append("  Forms: ${stats.forms}\n")
-        result.append("  Input Fields: ${stats.inputFields}\n")
-        result.append("  Scripts: ${stats.scripts}\n")
-        result.append("  Stylesheets: ${stats.styleSheets}\n")
-        result.append("  Inline Styles: ${stats.inlineStyles}\n\n")
-
-        result.append("Structure:\n")
-        result.append("  Maximum DOM Depth: ${stats.maxDOMDepth}\n\n")
-
-        result.append("Content:\n")
-        result.append("  Text Length: ${stats.textLength} characters\n")
-        result.append("  Word Count: ${stats.wordCount} words\n")
-
-        output.text = result.toString()
+        outputContent = formatTextOutput(stats)
       }
+
+      // Write to output file with proper encoding
+      File output = new File(outputFile)
+      output.setText(outputContent, encoding)
 
       logger.info("Successfully generated statistics to ${outputFile}")
       System.out.println("Successfully generated statistics to ${outputFile}")
@@ -185,5 +87,193 @@ class StatsCommand implements Callable<Integer> {
       System.err.println("Error generating statistics: ${e.message}")
       return 1
     }
+  }
+
+  /**
+   * Parse include options and create an AnalyzerOptions object.
+   */
+  private AnalyzerOptions parseOptions() {
+    def options = new AnalyzerOptions(encoding: encoding)
+
+    // Handle different include options
+    if (include.toLowerCase() == "all") {
+      options.includeAll = true
+    } else {
+      options.includeAll = false
+
+      def includes = include.split(",").collect { it.trim().toLowerCase() }
+
+      if (includes.contains("basic")) {
+        options.includeBasicInfo = true
+      }
+      if (includes.contains("elements")) {
+        options.includeElements = true
+      }
+      if (includes.contains("links")) {
+        options.includeLinks = true
+      }
+      if (includes.contains("structure")) {
+        options.includeStructure = true
+      }
+      if (includes.contains("content")) {
+        options.includeContent = true
+      }
+      if (includes.contains("performance")) {
+        options.includePerformance = true
+      }
+    }
+
+    return options
+  }
+
+  /**
+   * Format statistics as text output.
+   */
+  private String formatTextOutput(Map<String, Object> stats) {
+    def result = new StringBuilder()
+    result.append("Web Page Statistics\n")
+    result.append("=================\n\n")
+
+    // Format basic information
+    if (stats.containsKey("basicInfo")) {
+      result.append("Document Information:\n")
+      stats.basicInfo.each { key, value ->
+        if (key == "metadata") {
+          result.append("  Metadata:\n")
+          value.each { metaKey, metaValue ->
+            result.append("    ${metaKey}: ${metaValue}\n")
+          }
+        } else {
+          result.append("  ${key.capitalize()}: ${value}\n")
+        }
+      }
+      result.append("\n")
+    }
+
+    // Format element statistics
+    if (stats.containsKey("elements")) {
+      result.append("Element Counts:\n")
+      result.append("  Total Elements: ${stats.elements.totalElements}\n")
+
+      if (stats.elements.containsKey("elementsByTag")) {
+        result.append("  Top 10 Elements by Tag:\n")
+        stats.elements.elementsByTag.sort { -it.value }.take(10).each { tag, count ->
+          result.append("    ${tag}: ${count}\n")
+        }
+      }
+
+      // Other element statistics
+      def elementTypes = stats.elements.findAll { key, value ->
+        key != "totalElements" && key != "elementsByTag"
+      }
+
+      if (elementTypes) {
+        result.append("  Other Element Types:\n")
+        elementTypes.each { key, value ->
+          result.append("    ${key.capitalize()}: ${value}\n")
+        }
+      }
+
+      result.append("\n")
+    }
+
+    // Format link analysis
+    if (stats.containsKey("links")) {
+      result.append("Link Analysis:\n")
+      result.append("  Total Links: ${stats.links.totalLinks}\n")
+
+      if (stats.links.containsKey("linkTypes")) {
+        stats.links.linkTypes.each { type, count ->
+          result.append("  ${type.capitalize()}: ${count}\n")
+        }
+      }
+
+      if (stats.links.containsKey("externalDomains")) {
+        result.append("  External Domains: ${stats.links.externalDomains.size()}\n")
+        result.append("  External Domain List:\n")
+        stats.links.externalDomains.take(10).each { domain ->
+          result.append("    ${domain}\n")
+        }
+
+        if (stats.links.externalDomains.size() > 10) {
+          result.append("    ... and ${stats.links.externalDomains.size() - 10} more\n")
+        }
+      }
+
+      result.append("\n")
+    }
+
+    // Format structure analysis
+    if (stats.containsKey("structure")) {
+      result.append("Structure:\n")
+      result.append("  Maximum DOM Depth: ${stats.structure.maxDOMDepth}\n")
+
+      if (stats.structure.containsKey("averageNestingLevel")) {
+        result.append("  Average Nesting Level: ${String.format("%.2f", stats.structure.averageNestingLevel)}\n")
+      }
+
+      if (stats.structure.containsKey("deepestElement")) {
+        result.append("  Deepest Element: ${stats.structure.deepestElement}\n")
+      }
+
+      // Other structure statistics
+      def structureTypes = stats.structure.findAll { key, value ->
+        key != "maxDOMDepth" && key != "averageNestingLevel" &&
+            key != "deepestElement" && key != "elementsByLevel"
+      }
+
+      if (structureTypes) {
+        result.append("  Structural Elements:\n")
+        structureTypes.each { key, value ->
+          result.append("    ${key.capitalize()}: ${value}\n")
+        }
+      }
+
+      result.append("\n")
+    }
+
+    // Format content analysis
+    if (stats.containsKey("content")) {
+      result.append("Content:\n")
+      result.append("  Text Length: ${stats.content.textLength} characters\n")
+      result.append("  Word Count: ${stats.content.wordCount} words\n")
+
+      if (stats.content.containsKey("contentCodeRatio")) {
+        result.append("  Content/Code Ratio: ${String.format("%.2f", stats.content.contentCodeRatio * 100)}%\n")
+      }
+
+      if (stats.content.containsKey("headings")) {
+        result.append("  Heading Distribution:\n")
+        stats.content.headings.each { heading, count ->
+          result.append("    ${heading.toUpperCase()}: ${count}\n")
+        }
+      }
+
+      result.append("\n")
+    }
+
+    // Format performance analysis
+    if (stats.containsKey("performance")) {
+      result.append("Performance Considerations:\n")
+
+      if (stats.performance.containsKey("scripts")) {
+        result.append("  Script Loading:\n")
+        stats.performance.scripts.each { type, count ->
+          result.append("    ${type.capitalize()}: ${count}\n")
+        }
+      }
+
+      // Other performance metrics
+      def perfMetrics = stats.performance.findAll { key, value -> key != "scripts" }
+
+      if (perfMetrics) {
+        result.append("  Other Performance Metrics:\n")
+        perfMetrics.each { key, value ->
+          result.append("    ${key.capitalize()}: ${value}\n")
+        }
+      }
+    }
+
+    return result.toString()
   }
 }

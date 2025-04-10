@@ -10,11 +10,12 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import java.nio.charset.Charset
 import java.util.concurrent.Callable
 
 /**
  * Command to generate statistics about an HTML document.
- * This updated version uses the HtmlAnalyzer service for analysis.
+ * Handles UTF-8 and other encodings specified via the --encoding parameter.
  */
 @Command(
     name = "stats",
@@ -47,6 +48,9 @@ class StatsCommand implements Callable<Integer> {
   @Override
   Integer call() throws Exception {
     logger.info("Generating statistics for: ${inputFile}")
+
+    // Validate encoding
+    validateEncoding(encoding)
 
     try {
       File input = new File(inputFile)
@@ -90,6 +94,18 @@ class StatsCommand implements Callable<Integer> {
   }
 
   /**
+   * Validate the specified encoding is supported.
+   */
+  private static void validateEncoding(String encoding) {
+    try {
+      Charset.forName(encoding)
+    } catch (Exception e) {
+      logger.error("Unsupported encoding: ${encoding}", e)
+      throw new IllegalArgumentException("Unsupported encoding: ${encoding}")
+    }
+  }
+
+  /**
    * Parse include options and create an AnalyzerOptions object.
    */
   private AnalyzerOptions parseOptions() {
@@ -129,7 +145,7 @@ class StatsCommand implements Callable<Integer> {
   /**
    * Format statistics as text output.
    */
-  private String formatTextOutput(Map<String, Object> stats) {
+  private static String formatTextOutput(Map<String, Object> stats) {
     def result = new StringBuilder()
     result.append("Web Page Statistics\n")
     result.append("=================\n\n")

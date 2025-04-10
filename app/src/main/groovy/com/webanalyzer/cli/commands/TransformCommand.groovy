@@ -8,11 +8,12 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import java.nio.charset.Charset
 import java.util.concurrent.Callable
 
 /**
  * Command to transform HTML to another format.
- * This updated version uses the HtmlTransformer service for proper transformation.
+ * Handles UTF-8 and other encodings specified via the --encoding parameter.
  */
 @Command(
     name = "transform",
@@ -47,6 +48,9 @@ class TransformCommand implements Callable<Integer> {
   Integer call() throws Exception {
     logger.info("Transforming HTML file: ${inputFile} to ${format} format")
 
+    // Validate encoding
+    validateEncoding(encoding)
+
     try {
       File input = new File(inputFile)
       if (!input.exists()) {
@@ -79,6 +83,18 @@ class TransformCommand implements Callable<Integer> {
       logger.error("Error transforming HTML: ${e.message}", e)
       System.err.println("Error transforming HTML: ${e.message}")
       return 1
+    }
+  }
+
+  /**
+   * Validate the specified encoding is supported.
+   */
+  private static void validateEncoding(String encoding) {
+    try {
+      Charset.forName(encoding)
+    } catch (Exception e) {
+      logger.error("Unsupported encoding: ${encoding}", e)
+      throw new IllegalArgumentException("Unsupported encoding: ${encoding}")
     }
   }
 }

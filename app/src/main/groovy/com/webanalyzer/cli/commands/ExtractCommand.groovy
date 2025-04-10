@@ -8,11 +8,12 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import java.nio.charset.Charset
 import java.util.concurrent.Callable
 
 /**
  * Command to extract elements from HTML file using CSS selectors.
- * This updated version uses the ElementExtractor service for extraction.
+ * Handles UTF-8 and other encodings specified via the --encoding parameter.
  */
 @Command(
     name = "extract",
@@ -50,6 +51,9 @@ class ExtractCommand implements Callable<Integer> {
   Integer call() throws Exception {
     logger.info("Extracting elements from: ${inputFile} using selector: ${selector}")
 
+    // Validate encoding
+    validateEncoding(encoding)
+
     try {
       File input = new File(inputFile)
       if (!input.exists()) {
@@ -83,6 +87,18 @@ class ExtractCommand implements Callable<Integer> {
       logger.error("Error extracting elements: ${e.message}", e)
       System.err.println("Error extracting elements: ${e.message}")
       return 1
+    }
+  }
+
+  /**
+   * Validate the specified encoding is supported.
+   */
+  private static void validateEncoding(String encoding) {
+    try {
+      Charset.forName(encoding)
+    } catch (Exception e) {
+      logger.error("Unsupported encoding: ${encoding}", e)
+      throw new IllegalArgumentException("Unsupported encoding: ${encoding}")
     }
   }
 }

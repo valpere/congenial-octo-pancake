@@ -2,6 +2,12 @@ plugins {
   id 'groovy'
   id 'application'
   id 'com.github.johnrengelman.shadow' version '8.1.1'
+  id 'jacoco'
+}
+
+// Configure JaCoCo version
+jacoco {
+  toolVersion = "0.8.10"
 }
 
 group = 'com.webanalyzer'
@@ -46,6 +52,11 @@ dependencies {
   testImplementation libs.junit
   testRuntimeOnly libs.junit.engine
   testImplementation libs.geb.spock
+
+// JUnit Platform dependencies
+  testImplementation 'org.junit.platform:junit-platform-runner:1.13.0-M2'
+  testImplementation 'org.junit.platform:junit-platform-suite-api:1.13.0-M2'
+  testRuntimeOnly 'org.junit.platform:junit-platform-suite-engine:1.13.0-M2'
 }
 
 java {
@@ -131,4 +142,152 @@ tasks.register('dist') {
   dependsOn tasks.named('createDistribution'), tasks.named('createScripts')
   description = 'Creates a distributable package with executable scripts'
   group = 'distribution'
+}
+
+// Configure JUnit platform for test execution
+test {
+  useJUnitPlatform()
+
+  // Enable JaCoCo coverage collection
+  finalizedBy jacocoTestReport
+
+  // Configure test logging
+  testLogging {
+    events = ["passed", "skipped", "failed"]
+    exceptionFormat = "full"
+    showStandardStreams = true
+  }
+
+  // Configure system properties
+  systemProperty 'file.encoding', 'UTF-8'
+
+  // Configure test timeouts
+  systemProperty 'spock.configuration', 'SpockConfig.groovy'
+}
+
+// Configure the JaCoCo test report
+jacocoTestReport {
+  dependsOn test
+
+  reports {
+    xml.required = true // Required for coverage reports in CI tools
+    html.required = true // Human-readable report
+    csv.required = false
+
+    // Configure report output directories (using the correct property syntax)
+    html.outputLocation.set(file("${buildDir}/reports/coverage/html"))
+    xml.outputLocation.set(file("${buildDir}/reports/coverage/coverage.xml"))
+  }
+
+  // Add execution data from other tasks if needed
+  executionData.setFrom(files("${buildDir}/jacoco/test.exec"))
+
+  // Configure coverage verification
+  afterEvaluate {
+    classDirectories.setFrom(files(classDirectories.files.collect {
+      fileTree(dir: it, exclude: [
+          // Exclude generated classes
+          "**/*\$*",
+          // Exclude test classes
+          "**/test/**"
+      ])
+    }))
+  }
+}
+
+// Add coverage verification to ensure minimum coverage thresholds
+jacocoTestCoverageVerification {
+  dependsOn jacocoTestReport
+
+  violationRules {
+    rule {
+      limit {
+        minimum = 0.8 // 80% minimum coverage required as per project requirements
+      }
+    }
+
+    rule {
+      element = 'CLASS'
+      includes = ['com.webanalyzer.core.*']
+      limit {
+        minimum = 0.85 // Higher threshold for core classes
+      }
+    }
+
+    rule {
+      element = 'CLASS'
+      includes = ['com.webanalyzer.cli.commands.*']
+      limit {
+        minimum = 0.8 // Threshold for command classes
+      }
+    }
+  }
+}
+
+// Create a custom task to run all tests with coverage
+tasks.register('testWithCoverage', Task) {
+  group = 'Verification'
+  description = 'Runs all tests with coverage report and verification'
+
+  dependsOn test
+  dependsOn jacocoTestReport
+  dependsOn jacocoTestCoverageVerification
+
+  doLast {
+    println "Test coverage report generated at: ${jacocoTestReport.reports.html.outputLocation.get()}"
+    println "Coverage verification completed with minimum threshold of 80%"
+  }
+}
+
+// Create a SpockConfig.groovy file for global test configuration
+tasks.register('createSpockConfig') {
+  def outputFile = file('src/test/resources/SpockConfig.groovy')
+  outputs.file(outputFile)
+
+  doLast {
+    if (!outputFile.exists()) {
+      outputFile.parentFile.mkdirs()
+      outputFile.text = '''
+import java.util.concurrent.TimeUnit
+
+runner {
+    // Global timeout for all tests to prevent hanging tests
+    filterStackTrace = true
+    optimizeRunOrder = true
+}
+
+// Configure default timeout for all feature methods
+spock {
+    timeout {
+        enabled = true
+        unit = TimeUnit.SECONDS
+        value = 60
+    }
+}
+'''
+      logger.lifecycle("Created SpockConfig.groovy at ${outputFile.absolutePath}")
+    }
+  }
+}
+
+// Create sample HTML files for testing
+tasks.register('createSampleHtmlFiles', JavaExec) {
+  description = 'Generates sample HTML files for testing'
+  group = 'Test preparation'
+
+  classpath = sourceSets.test.runtimeClasspath
+  mainClass = 'com.webanalyzer.test.util.SampleHtmlFilesGenerator'
+
+  doFirst {
+    println "Generating sample HTML files for testing..."
+  }
+}
+
+// Make tests depend on the Spock configuration and sample HTML files
+test.dependsOn createSpockConfig
+test.dependsOn createSampleHtmlFiles
+
+// Add explicit dependency between processTestResources and createSpockConfig
+tasks.named('processTestResources') {
+  dependsOn 'createSpockConfig'
 }

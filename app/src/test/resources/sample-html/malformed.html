@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Malformed HTML Test
+    <meta charset="UTF-8">
+    <meta name="description" content="Test file with malformed HTML structure">
+</head>
+<body>
+    <h1>Malformed HTML Test</h1>
+    
+    <!-- Unclosed tags -->
+    <div class="unclosed">
+        <p>This paragraph tag is not closed
+        <p>This is another paragraph
+    </div>
+    
+    <!-- Incorrectly nested tags -->
+    <span><strong>This is incorrectly nested</span></strong>
+    
+    <!-- Missing end tags -->
+    <ul>
+        <li>Item 1
+        <li>Item 2
+        <li>Item 3
+    </ul>
+    
+    <!-- Missing attributes quotes -->
+    <a href=https://example.com class=link>Link with missing quotes</a>
+    
+    <!-- Unescaped special characters -->
+    <p>These characters should be escaped: < > & " '</p>
+    
+    <!-- Unclosed comment tag
+    <p>This paragraph is inside an unclosed comment
+    
+    <!-- Empty attributes -->
+    <input required disabled>
+    
+    <!-- Invalid attributes -->
+    <div class="valid" invalid-attr="test">Invalid attribute</div>
+    
+    <!-- Duplicate IDs -->
+    <div id="duplicate">First element with this ID</div>
+    <div id="duplicate">Second element with this ID</div>
+    
+    <!-- Improperly closed void elements -->
+    <img src="image.jpg"></img>
+    <br></br>
+    
+    <!-- Mismatched end tags -->
+    <div>This has a mismatched end tag</span>
+    
+    <!-- HTML after </html> -->
+</body>
+</html>
+
+<p>This paragraph is after the HTML end tag</p>

@@ -8,11 +8,12 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import java.nio.charset.Charset
 import java.util.concurrent.Callable
 
 /**
  * Command to retrieve a web page by URL and save it as HTML.
- * This updated version uses the enhanced WebPageFetcher with additional options.
+ * Handles UTF-8 and other encodings specified via the --encoding parameter.
  */
 @Command(
     name = "read",
@@ -54,6 +55,9 @@ class ReadCommand implements Callable<Integer> {
 
   @Override
   Integer call() throws Exception {
+    // Validate encoding
+    validateEncoding(encoding)
+
     // Basic URL validation
     if (!url.startsWith("http://") && !url.startsWith("https://")) {
       url = "https://" + url
@@ -102,6 +106,18 @@ class ReadCommand implements Callable<Integer> {
       logger.error("Error fetching web page: ${e.message}", e)
       System.err.println("Error fetching web page: ${e.message}")
       return 1
+    }
+  }
+
+  /**
+   * Validate the specified encoding is supported.
+   */
+  private static void validateEncoding(String encoding) {
+    try {
+      Charset.forName(encoding)
+    } catch (Exception e) {
+      logger.error("Unsupported encoding: ${encoding}", e)
+      throw new IllegalArgumentException("Unsupported encoding: ${encoding}")
     }
   }
 }

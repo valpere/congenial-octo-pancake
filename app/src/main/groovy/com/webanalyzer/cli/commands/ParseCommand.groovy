@@ -8,12 +8,11 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import java.nio.charset.Charset
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.util.concurrent.Callable
 
 /**
  * Command to parse an HTML file and convert its DOM to JSON format.
+ * Handles UTF-8 and other encodings specified via the --encoding parameter.
  */
 @Command(
     name = "parse",
@@ -42,6 +41,9 @@ class ParseCommand implements Callable<Integer> {
   Integer call() throws Exception {
     logger.info("Parsing HTML file: ${inputFile}")
 
+    // Validate encoding
+    validateEncoding(encoding)
+
     // Validate input file
     def input = new File(inputFile)
     if (!input.exists()) {
@@ -60,8 +62,9 @@ class ParseCommand implements Callable<Integer> {
           pretty
       )
 
-      // Write the output with explicit UTF-8 encoding
-      Files.write(Paths.get(outputFile), jsonResult.getBytes(encoding))
+      // Write the output with explicit encoding (using the consistent approach)
+      File output = new File(outputFile)
+      output.setText(jsonResult, encoding)
 
       logger.info("Successfully parsed HTML to JSON: ${outputFile}")
       System.out.println("Successfully parsed HTML to JSON: ${outputFile}")
@@ -71,6 +74,18 @@ class ParseCommand implements Callable<Integer> {
       logger.error("Error parsing HTML: ${e.message}", e)
       System.err.println("Error parsing HTML: ${e.message}")
       return 1
+    }
+  }
+
+  /**
+   * Validate the specified encoding is supported.
+   */
+  private static void validateEncoding(String encoding) {
+    try {
+      Charset.forName(encoding)
+    } catch (Exception e) {
+      logger.error("Unsupported encoding: ${encoding}", e)
+      throw new IllegalArgumentException("Unsupported encoding: ${encoding}")
     }
   }
 }

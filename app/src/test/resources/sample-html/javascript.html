@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Dynamic Content Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>JavaScript Dynamic Content Test</h1>
+    
+    <div class="container">
+        <h2>Delayed Content</h2>
+        <p>The content below will appear after a 2-second delay:</p>
+        <div id="delayed-content" class="hidden">
+            <p>This content was dynamically added after page load.</p>
+            <p>Current time: <span id="current-time"></span></p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>Interactive Elements</h2>
+        <button id="toggle-button">Toggle Visibility</button>
+        <button id="add-element">Add New Element</button>
+        <button id="change-style">Change Style</button>
+        <button id="load-data">Load Data</button>
+        
+        <div id="toggle-target" class="container">
+            <p>This content can be toggled.</p>
+        </div>
+        
+        <div id="dynamic-container"></div>
+        
+        <table id="data-table" class="hidden">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Value</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="container">
+        <h2>AJAX Content</h2>
+        <button id="ajax-button">Load External Content</button>
+        <div id="ajax-container"></div>
+    </div>
+    
+    <script>
+        // Delayed content
+        setTimeout(() => {
+            const delayedContent = document.getElementById('delayed-content');
+            delayedContent.classList.remove('hidden');
+            
+            const timeElement = document.getElementById('current-time');
+            timeElement.textContent = new Date().toLocaleTimeString();
+        }, 2000);
+        
+        // Toggle visibility
+        document.getElementById('toggle-button').addEventListener('click', function() {
+            const target = document.getElementById('toggle-target');
+            if (target.style.display === 'none') {
+                target.style.display = 'block';
+            } else {
+                target.style.display = 'none';
+            }
+        });
+        
+        // Add new element
+        document.getElementById('add-element').addEventListener('click', function() {
+            const container = document.getElementById('dynamic-container');
+            const newElement = document.createElement('div');
+            newElement.className = 'container';
+            newElement.innerHTML = `<p>New element added at: ${new Date().toLocaleTimeString()}</p>`;
+            container.appendChild(newElement);
+        });
+        
+        // Change style
+        document.getElementById('change-style').addEventListener('click', function() {
+            const containers = document.querySelectorAll('.container');
+            const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+            containers.forEach(container => {
+                container.style.backgroundColor = randomColor;
+                container.style.color = isLightColor(randomColor) ? '#000' : '#fff';
+            });
+        });
+        
+        // Load data
+        document.getElementById('load-data').addEventListener('click', function() {
+            const table = document.getElementById('data-table');
+            const tbody = table.querySelector('tbody');
+            
+            // Clear existing rows
+            tbody.innerHTML = '';
+            
+            // Generate sample data
+            for (let i = 1; i <= 5; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i}</td>
+                    <td>Item ${i}</td>
+                    <td>${Math.floor(Math.random() * 1000)}</td>
+                    <td>${Math.random() > 0.5 ? 'Active' : 'Inactive'}</td>
+                `;
+                tbody.appendChild(row);
+            }
+            
+            // Show the table
+            table.classList.remove('hidden');
+        });
+        
+        // AJAX button (simulated)
+        document.getElementById('ajax-button').addEventListener('click', function() {
+            const container = document.getElementById('ajax-container');
+            container.innerHTML = '<p>Loading...</p>';
+            
+            // Simulate AJAX request
+            setTimeout(() => {
+                container.innerHTML = `
+                    <h3>External Content</h3>
+                    <p>This content was loaded via simulated AJAX.</p>
+                    <p>Time: ${new Date().toLocaleTimeString()}</p>
+                `;
+            }, 1500);
+        });
+        
+        // Helper function to determine if a color is light or dark
+        function isLightColor(color) {
+            const hex = color.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            return brightness > 128;
+        }
+    </script>
+</body>
+</html>

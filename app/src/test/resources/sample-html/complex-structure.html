@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complex Structure Test</title>
+    <meta name="description" content="An HTML file with complex DOM structure">
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="logo-container">
+            <img src="logo.png" alt="Logo" class="logo">
+        </div>
+        <nav class="main-nav">
+            <ul class="nav-list">
+                <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
+                <li class="nav-item dropdown">
+                    <a href="/products" class="nav-link">Products</a>
+                    <ul class="dropdown-menu">
+                        <li class="dropdown-item"><a href="/products/category1">Category 1</a></li>
+                        <li class="dropdown-item"><a href="/products/category2">Category 2</a></li>
+                        <li class="dropdown-item"><a href="/products/category3">Category 3</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item"><a href="/about" class="nav-link">About</a></li>
+                <li class="nav-item"><a href="/contact" class="nav-link">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main class="site-main">
+        <aside class="sidebar">
+            <div class="sidebar-widget">
+                <h3 class="widget-title">Categories</h3>
+                <ul class="category-list">
+                    <li class="category-item"><a href="/category1">Category 1</a></li>
+                    <li class="category-item"><a href="/category2">Category 2</a></li>
+                    <li class="category-item"><a href="/category3">Category 3</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-widget">
+                <h3 class="widget-title">Recent Posts</h3>
+                <ul class="post-list">
+                    <li class="post-item"><a href="/post1">Post 1</a></li>
+                    <li class="post-item"><a href="/post2">Post 2</a></li>
+                    <li class="post-item"><a href="/post3">Post 3</a></li>
+                </ul>
+            </div>
+        </aside>
+        
+        <div class="content-area">
+            <article class="post">
+                <header class="post-header">
+                    <h1 class="post-title">Complex Structure Test</h1>
+                    <div class="post-meta">
+                        <span class="post-date">January 1, 2023</span>
+                        <span class="post-author">by <a href="/author">Test Author</a></span>
+                    </div>
+                </header>
+                
+                <div class="post-content">
+                    <p>This is a paragraph in the main content with some <strong>bold text</strong> and <em>italic text</em>.</p>
+                    
+                    <blockquote class="quote">
+                        <p>This is a blockquote with a nested paragraph.</p>
+                        <footer class="quote-footer">- Quote Author</footer>
+                    </blockquote>
+                    
+                    <section class="post-section">
+                        <h2 class="section-title">Section Title</h2>
+                        <p>Paragraph in a nested section.</p>
+                        
+                        <div class="image-gallery">
+                            <figure class="gallery-item">
+                                <img src="image1.jpg" alt="Image 1" class="gallery-image">
+                                <figcaption class="image-caption">Image 1 Caption</figcaption>
+                            </figure>
+                            <figure class="gallery-item">
+                                <img src="image2.jpg" alt="Image 2" class="gallery-image">
+                                <figcaption class="image-caption">Image 2 Caption</figcaption>
+                            </figure>
+                        </div>
+                    </section>
+                    
+                    <section class="post-section">
+                        <h2 class="section-title">Another Section</h2>
+                        <p>Another paragraph in a different section.</p>
+                        
+                        <div class="code-block">
+                            <pre><code>
+function testFunction() {
+    console.log("Hello, world!");
+}
+                            </code></pre>
+                        </div>
+                    </section>
+                </div>
+                
+                <footer class="post-footer">
+                    <div class="post-tags">
+                        <span class="tag-label">Tags:</span>
+                        <a href="/tag1" class="tag">Tag 1</a>
+                        <a href="/tag2" class="tag">Tag 2</a>
+                        <a href="/tag3" class="tag">Tag 3</a>
+                    </div>
+                    
+                    <div class="post-share">
+                        <span class="share-label">Share:</span>
+                        <a href="#" class="share-link">Facebook</a>
+                        <a href="#" class="share-link">Twitter</a>
+                        <a href="#" class="share-link">LinkedIn</a>
+                    </div>
+                </footer>
+            </article>
+            
+            <section class="comments-section">
+                <h2 class="comments-title">Comments</h2>
+                
+                <div class="comment">
+                    <div class="comment-meta">
+                        <span class="comment-author">Comment Author</span>
+                        <span class="comment-date">January 2, 2023</span>
+                    </div>
+                    <div class="comment-content">
+                        <p>This is a comment on the article.</p>
+                    </div>
+                </div>
+                
+                <div class="comment">
+                    <div class="comment-meta">
+                        <span class="comment-author">Another Commenter</span>
+                        <span class="comment-date">January 3, 2023</span>
+                    </div>
+                    <div class="comment-content">
+                        <p>This is another comment with <a href="#">a link</a>.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <footer class="site-footer">
+        <div class="footer-widgets">
+            <div class="footer-widget">
+                <h3 class="widget-title">About Us</h3>
+                <p>This is a complex HTML structure test file.</p>
+            </div>
+            <div class="footer-widget">
+                <h3 class="widget-title">Quick Links</h3>
+                <ul class="quick-links">
+                    <li><a href="/page1">Page 1</a></li>
+                    <li><a href="/page2">Page 2</a></li>
+                    <li><a href="/page3">Page 3</a></li>
+                </ul>
+            </div>
+            <div class="footer-widget">
+                <h3 class="widget-title">Contact</h3>
+                <address class="contact-info">
+                    <p>123 Test Street</p>
+                    <p>Test City, TC 12345</p>
+                    <p>Email: <a href="mailto:test@example.com">test@example.com</a></p>
+                </address>
+            </div>
+        </div>
+        
+        <div class="copyright">
+            <p>&copy; 2023 Test Company. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

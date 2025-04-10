@@ -608,12 +608,17 @@ class HtmlComparator {
 
   /**
    * Format comparison results as JSON.
+   * This method always uses the JsonGenerator with Unicode escaping disabled
+   * to ensure proper handling of non-ASCII characters.
    */
   String formatAsJson(Map<String, Object> results, boolean prettyPrint) {
+    // Always use the generator with Unicode escaping disabled
+    String jsonString = generator.toJson(results)
+
     if (prettyPrint) {
-      return generator.toJson(results)
+      return JsonOutput.prettyPrint(jsonString)
     } else {
-      return JsonOutput.toJson(results)
+      return jsonString
     }
   }
 }

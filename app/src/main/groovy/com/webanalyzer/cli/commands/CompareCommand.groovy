@@ -8,11 +8,12 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import java.nio.charset.Charset
 import java.util.concurrent.Callable
 
 /**
  * Command to compare two HTML files and identify differences.
- * This updated version uses the HtmlComparator service for comparison.
+ * Handles UTF-8 and other encodings specified via the --encoding parameter.
  */
 @Command(
     name = "compare",
@@ -52,6 +53,9 @@ class CompareCommand implements Callable<Integer> {
   @Override
   Integer call() throws Exception {
     logger.info("Comparing HTML files: ${file1} and ${file2}")
+
+    // Validate encoding
+    validateEncoding(encoding)
 
     try {
       // Validate input files
@@ -102,6 +106,18 @@ class CompareCommand implements Callable<Integer> {
       logger.error("Error comparing HTML files: ${e.message}", e)
       System.err.println("Error comparing HTML files: ${e.message}")
       return 1
+    }
+  }
+
+  /**
+   * Validate the specified encoding is supported.
+   */
+  private static void validateEncoding(String encoding) {
+    try {
+      Charset.forName(encoding)
+    } catch (Exception e) {
+      logger.error("Unsupported encoding: ${encoding}", e)
+      throw new IllegalArgumentException("Unsupported encoding: ${encoding}")
     }
   }
 }

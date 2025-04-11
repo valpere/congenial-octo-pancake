@@ -116,12 +116,16 @@ class ElementExtractor {
 
   /**
    * Format data as JSON.
+   * Always use the custom JsonGenerator to preserve UTF-8 characters.
    */
   private String formatAsJson(List<Map<String, String>> data, boolean prettyPrint) {
+    // Always use the custom generator to preserve UTF-8 characters
+    String jsonString = generator.toJson(data)
+
     if (prettyPrint) {
-      return generator.toJson(data)
+      return JsonOutput.prettyPrint(jsonString)
     } else {
-      return JsonOutput.toJson(data)
+      return jsonString
     }
   }
 
@@ -133,8 +137,12 @@ class ElementExtractor {
       return ""
     }
 
-    // Get all possible headers (from all items)
-    def headers = ["text"] + data.collectMany { it.keySet() }.unique() - "text"
+    // Get all possible headers from all items
+    def allKeys = data.collectMany { it.keySet() }.unique()
+
+    // Ensure "text" is the first column
+    def headers = ["text"]
+    headers.addAll(allKeys.findAll { it != "text" })
 
     // Create CSV content
     def csv = [headers.join(",")]
@@ -176,29 +184,5 @@ class ElementExtractor {
       result.append("----------\n")
       return result.toString()
     }.join("\n")
-  }
-}
-
-/**
- * Options for element extraction.
- */
-class ExtractorOptions {
-  String encoding = "UTF-8"
-  String format = "json"
-  List<String> attributes = []
-  boolean includeHtml = false
-  boolean prettyPrint = false
-}
-
-/**
- * Custom exception for extractor errors.
- */
-class ExtractorException extends Exception {
-  ExtractorException(String message) {
-    super(message)
-  }
-
-  ExtractorException(String message, Throwable cause) {
-    super(message, cause)
   }
 }

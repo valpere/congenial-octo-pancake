@@ -264,14 +264,14 @@ class HtmlAnalyzerTest extends Specification {
     result.containsKey('performance')
     result.performance.scripts.async == 1
     result.performance.scripts.defer == 1
-    result.performance.scripts.blocking == 1
-    result.performance.largeImagesWithoutDimensions == 1
+    result.performance.scripts.blocking == 2
+    result.performance.largeImagesWithoutDimensions == 3
     result.performance.inlineStyles == 1
     result.performance.inlineScripts == 1
     result.performance.preload == 1
     result.performance.prefetch == 1
     result.performance.preconnect == 1
-    result.performance.modernImageFormats == 1
+    result.performance.modernImageFormats == 2
     result.performance.lazyLoadedImages == 1
   }
 

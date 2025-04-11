@@ -27,16 +27,3 @@ class ComparisonOptions {
    */
   String encoding = "UTF-8"
 }
-
-/**
- * Custom exception for HTML comparison errors.
- */
-class ComparatorException extends Exception {
-  ComparatorException(String message) {
-    super(message)
-  }
-
-  ComparatorException(String message, Throwable cause) {
-    super(message, cause)
-  }
-}

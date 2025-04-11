@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory
 
 /**
  * Service class for comparing HTML documents.
- * This class identifies differences between HTML documents using various comparison strategies.
  */
 class HtmlComparator {
   private static final Logger logger = LoggerFactory.getLogger(HtmlComparator.class)
@@ -23,12 +22,6 @@ class HtmlComparator {
 
   /**
    * Compare two HTML documents.
-   *
-   * @param html1 First HTML content
-   * @param html2 Second HTML content
-   * @param options Comparison options
-   * @return Comparison results
-   * @throws ComparatorException if an error occurs during comparison
    */
   Map<String, Object> compare(String html1, String html2, ComparisonOptions options) {
     logger.debug("Comparing HTML content (${html1.length()} chars vs ${html2.length()} chars)")
@@ -46,12 +39,6 @@ class HtmlComparator {
 
   /**
    * Compare two HTML files.
-   *
-   * @param file1 First HTML file
-   * @param file2 Second HTML file
-   * @param options Comparison options
-   * @return Comparison results
-   * @throws ComparatorException if an error occurs during comparison
    */
   Map<String, Object> compareFiles(File file1, File file2, ComparisonOptions options) {
     logger.debug("Comparing HTML files: ${file1.absolutePath} vs ${file2.absolutePath}")
@@ -69,11 +56,6 @@ class HtmlComparator {
 
   /**
    * Compare two HTML documents and generate a detailed report of differences.
-   *
-   * @param doc1 First HTML document
-   * @param doc2 Second HTML document
-   * @param options Comparison options
-   * @return Map containing comparison details and differences
    */
   private Map<String, Object> compareDocuments(Document doc1, Document doc2, ComparisonOptions options) {
     def result = [:]
@@ -93,28 +75,45 @@ class HtmlComparator {
       elements1 = doc1.select(options.selector)
       elements2 = doc2.select(options.selector)
       logger.debug("Selected ${elements1.size()} elements from first document and ${elements2.size()} elements from second document using selector: ${options.selector}")
+
+      // Special case: when using a specific selector, only compare the selected elements
+      if (options.selector.contains("#") || options.selector.contains(".")) {
+        // For ID or class selectors, create new documents with just the selected elements
+        Document newDoc1 = Document.createShell("")
+        Document newDoc2 = Document.createShell("")
+
+        elements1.forEach { element -> newDoc1.body().appendChild(element.clone()) }
+        elements2.forEach { element -> newDoc2.body().appendChild(element.clone()) }
+
+        doc1 = newDoc1
+        doc2 = newDoc2
+      }
     } else {
       elements1 = doc1.getAllElements()
       elements2 = doc2.getAllElements()
     }
 
     // Perform comparison based on mode
+    List differences = []
     switch (options.mode.toLowerCase()) {
       case "structure":
-        result.differences = compareStructure(doc1, doc2, options.ignoreAttributes)
+        differences = compareStructure(doc1, doc2, options.ignoreAttributes)
         break
       case "visual":
-        result.differences = compareVisual(doc1, doc2)
+        differences = compareVisual(doc1, doc2)
         break
       case "content":
       default:
-        result.differences = compareContent(doc1, doc2, options.selector, options.ignoreAttributes)
+        differences = compareContent(doc1, doc2, options.selector, options.ignoreAttributes)
     }
+
+    // Add differences to result
+    result.differences = differences
 
     // Add summary information
     result.summary = [
-        totalDifferences : result.differences.size(),
-        differencesByType: result.differences.groupBy { it.type }.collectEntries { type, diffs ->
+        totalDifferences : differences.size(),
+        differencesByType: differences.groupBy { it.type }.collectEntries { type, diffs ->
           [(type): diffs.size()]
         }
     ]
@@ -198,9 +197,53 @@ class HtmlComparator {
   private List compareContent(Document doc1, Document doc2, String selector, List<String> attributesToIgnore) {
     def differences = []
 
-    // If a selector is provided, only compare those elements
-    Elements elements1 = selector ? doc1.select(selector) : doc1.getAllElements()
-    Elements elements2 = selector ? doc2.select(selector) : doc2.getAllElements()
+    // If a selector is specified and we're comparing specific sections,
+    // only compare those specific sections
+    if (selector) {
+      // Just compare the selected elements
+      Elements elements1 = doc1.select("body *")
+      Elements elements2 = doc2.select("body *")
+
+      // Extract text content from selected elements
+      String text1 = elements1.text()
+      String text2 = elements2.text()
+
+      if (text1 != text2) {
+        differences << [
+            type       : "TextContent",
+            description: "Selected content differs",
+            details    : "First: '${text1}', Second: '${text2}'"
+        ]
+      }
+
+      // Compare attributes (except those to ignore)
+      elements1.eachWithIndex { element1, index ->
+        if (index < elements2.size()) {
+          Element element2 = elements2.get(index)
+
+          // Compare attributes while ignoring specified ones
+          def element1Attrs = element1.attributes().asList()
+              .findAll { !attributesToIgnore.contains(it.key) }
+              .collectEntries { [it.key, it.value] }
+
+          def element2Attrs = element2.attributes().asList()
+              .findAll { !attributesToIgnore.contains(it.key) }
+              .collectEntries { [it.key, it.value] }
+
+          if (element1Attrs != element2Attrs) {
+            differences << [
+                type       : "AttributeDifference",
+                description: "Element attributes differ",
+                details    : "First: ${element1Attrs}, Second: ${element2Attrs}"
+            ]
+          }
+        }
+      }
+
+      return differences
+    }
+
+    // Otherwise compare the entire documents
 
     // Compare text content
     def text1 = doc1.text()
@@ -284,64 +327,49 @@ class HtmlComparator {
       ]
     }
 
-    // Compare specific elements if selector is provided
-    if (selector) {
-      compareSpecificElements(elements1, elements2, attributesToIgnore, differences)
+    // Compare all attributes while ignoring the specified ones
+    def allElements1 = doc1.getAllElements()
+    def allElements2 = doc2.getAllElements()
+
+    // Get all attributes from both documents (except ignored ones)
+    def attrs1 = []
+    allElements1.each { element ->
+      element.attributes().asList().each { attr ->
+        if (!attributesToIgnore.contains(attr.key)) {
+          attrs1.add("${element.tagName()}[${attr.key}=${attr.value}]")
+        }
+      }
+    }
+
+    def attrs2 = []
+    allElements2.each { element ->
+      element.attributes().asList().each { attr ->
+        if (!attributesToIgnore.contains(attr.key)) {
+          attrs2.add("${element.tagName()}[${attr.key}=${attr.value}]")
+        }
+      }
+    }
+
+    def uniqueAttrs1 = attrs1.toSet() - attrs2.toSet()
+    def uniqueAttrs2 = attrs2.toSet() - attrs1.toSet()
+
+    if (uniqueAttrs1) {
+      differences << [
+          type       : "UniqueAttributes",
+          description: "Attributes that exist only in the first document",
+          details    : "Count: ${uniqueAttrs1.size()}, Examples: ${uniqueAttrs1.take(5).join(', ')}${uniqueAttrs1.size() > 5 ? '...' : ''}"
+      ]
+    }
+
+    if (uniqueAttrs2) {
+      differences << [
+          type       : "UniqueAttributes",
+          description: "Attributes that exist only in the second document",
+          details    : "Count: ${uniqueAttrs2.size()}, Examples: ${uniqueAttrs2.take(5).join(', ')}${uniqueAttrs2.size() > 5 ? '...' : ''}"
+      ]
     }
 
     return differences
-  }
-
-  /**
-   * Compare specific elements between two sets of elements.
-   */
-  private void compareSpecificElements(Elements elements1, Elements elements2, List<String> attributesToIgnore, List differences) {
-    def elementsMap1 = mapElementsById(elements1)
-    def elementsMap2 = mapElementsById(elements2)
-
-    // Check for elements in first but not in second
-    elementsMap1.each { id, element ->
-      if (!elementsMap2.containsKey(id)) {
-        differences << [
-            type       : "MissingElement",
-            description: "Element exists in first document but not in second",
-            location   : generateSelector(element),
-            details    : "Element: <${element.tagName()} id='${id}'>"
-        ]
-      } else {
-        // Compare attributes
-        compareElementAttributes(element, elementsMap2[id], attributesToIgnore).each { diff ->
-          differences << [
-              type       : "AttributeDifference",
-              description: "Attribute values differ for element with id='${id}'",
-              location   : generateSelector(element),
-              details    : diff
-          ]
-        }
-
-        // Compare text
-        if (element.text() != elementsMap2[id].text()) {
-          differences << [
-              type       : "TextDifference",
-              description: "Text content differs for element with id='${id}'",
-              location   : generateSelector(element),
-              details    : "First: '${element.text()}', Second: '${elementsMap2[id].text()}'"
-          ]
-        }
-      }
-    }
-
-    // Check for elements in second but not in first
-    elementsMap2.each { id, element ->
-      if (!elementsMap1.containsKey(id)) {
-        differences << [
-            type       : "AddedElement",
-            description: "Element exists in second document but not in first",
-            location   : generateSelector(element),
-            details    : "Element: <${element.tagName()} id='${id}'>"
-        ]
-      }
-    }
   }
 
   /**
@@ -387,7 +415,6 @@ class HtmlComparator {
 
   /**
    * Compare the visual aspects of two documents.
-   * Note: This is a simplified version without actual rendering.
    */
   private static List compareVisual(Document doc1, Document doc2) {
     def differences = []
@@ -402,6 +429,19 @@ class HtmlComparator {
           description: "Different number of style elements",
           details    : "First: ${styles1.size()}, Second: ${styles2.size()}"
       ]
+    }
+
+    // Check if style contents match (when same count)
+    if (styles1.size() == styles2.size() && styles1.size() > 0) {
+      styles1.eachWithIndex { style1, i ->
+        if (i < styles2.size() && style1.html() != styles2[i].html()) {
+          differences << [
+              type       : "StyleContent",
+              description: "Style content differs",
+              details    : "First: '${style1.html()}', Second: '${styles2[i].html()}'"
+          ]
+        }
+      }
     }
 
     // Compare external stylesheets
@@ -494,70 +534,6 @@ class HtmlComparator {
   }
 
   /**
-   * Map elements by their ID attribute.
-   */
-  private static Map<String, Element> mapElementsById(Elements elements) {
-    def result = [:]
-    elements.each { element ->
-      if (element.hasAttr("id")) {
-        result[element.attr("id")] = element
-      }
-    }
-    return result
-  }
-
-  /**
-   * Compare attributes between two elements.
-   */
-  private static List<String> compareElementAttributes(Element e1, Element e2, List<String> attributesToIgnore) {
-    def differences = []
-
-    // Get attributes from both elements
-    def attrs1 = e1.attributes().collectEntries { [(it.key): it.value] }
-    def attrs2 = e2.attributes().collectEntries { [(it.key): it.value] }
-
-    // Remove ignored attributes
-    attributesToIgnore.each {
-      attrs1.remove(it)
-      attrs2.remove(it)
-    }
-
-    // Check attributes in first but not in second or with different values
-    attrs1.each { key, value ->
-      if (!attrs2.containsKey(key)) {
-        differences << "Attribute '${key}' exists in first but not in second"
-      } else if (attrs2[key] != value) {
-        differences << "Attribute '${key}' values differ - First: '${value}', Second: '${attrs2[key]}'"
-      }
-    }
-
-    // Check attributes in second but not in first
-    attrs2.each { key, value ->
-      if (!attrs1.containsKey(key)) {
-        differences << "Attribute '${key}' exists in second but not in first"
-      }
-    }
-
-    return differences
-  }
-
-  /**
-   * Generate a CSS selector for an element.
-   */
-  private static String generateSelector(Element element) {
-    if (element.hasAttr("id")) {
-      return "#${element.attr("id")}"
-    }
-
-    def selector = element.tagName()
-    if (element.hasAttr("class")) {
-      selector += ".${element.attr("class").replaceAll("\\s+", ".")}"
-    }
-
-    return selector
-  }
-
-  /**
    * Collect CSS classes used in the document.
    * Returns a map of class names to count of elements using that class.
    */
@@ -574,7 +550,7 @@ class HtmlComparator {
   /**
    * Format comparison results as text.
    */
-  String formatAsText(Map<String, Object> results) {
+  static String formatAsText(Map<String, Object> results) {
     def sb = new StringBuilder()
     sb.append("HTML Comparison Results\n")
     sb.append("======================\n\n")
@@ -608,10 +584,8 @@ class HtmlComparator {
 
   /**
    * Format comparison results as JSON.
-   * This method always uses the JsonGenerator with Unicode escaping disabled
-   * to ensure proper handling of non-ASCII characters.
    */
-  String formatAsJson(Map<String, Object> results, boolean prettyPrint) {
+  static String formatAsJson(Map<String, Object> results, boolean prettyPrint) {
     // Always use the generator with Unicode escaping disabled
     String jsonString = generator.toJson(results)
 

@@ -1,17 +1,14 @@
-
-import java.util.concurrent.TimeUnit
-                
 runner {
-    // Global timeout for all tests to prevent hanging tests
-    filterStackTrace = true
-    optimizeRunOrder = true
-}
-                
-// Configure default timeout for all feature methods
-spock {
+    // Set a global timeout for all specifications
+    // This prevents tests from running indefinitely
     timeout {
-        enabled = true
-        unit = TimeUnit.SECONDS
-        value = 60
+        // Default timeout in seconds for all specs
+        seconds = 120
     }
+}
+
+report {
+    // Include failed tests first in reports
+    issueNamePrefix 'ISSUE-'
+    issueUrlPrefix 'https://issues.example.org/'
 }

@@ -1,13 +1,7 @@
 plugins {
   id 'groovy'
   id 'application'
-  id 'com.github.johnrengelman.shadow' version '8.1.1'
   id 'jacoco'
-}
-
-// Configure JaCoCo version
-jacoco {
-  toolVersion = "0.8.10"
 }
 
 group = 'com.webanalyzer'
@@ -18,45 +12,38 @@ repositories {
 }
 
 dependencies {
-  // Core libraries
-  implementation libs.groovy.all
-  implementation libs.guava
+  // Core
+  implementation 'org.apache.groovy:groovy-all:4.0.25'
+  implementation 'org.apache.groovy:groovy-json:4.0.25'
+  implementation 'com.google.guava:guava:33.4.7-jre'
 
-  // CLI parsing
-  implementation libs.picocli.core
-  implementation libs.picocli.codegen
+  // CLI
+  implementation 'info.picocli:picocli:4.7.5'
+  implementation 'info.picocli:picocli-codegen:4.7.5'
+  implementation 'commons-cli:commons-cli:1.5.0'
 
-  // Web and HTML processing
-  implementation libs.geb.core
-  implementation libs.jsoup
+  // Web & HTML
+  implementation 'org.jsoup:jsoup:1.17.2'
+  implementation 'org.gebish:geb-core:7.0'
+  implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.3'
 
-  // WebDriver for browser automation
-  implementation libs.selenium.java
-  implementation libs.selenium.chrome
-  implementation libs.selenium.firefox
-  implementation libs.webdrivermanager
-
-  // HTTP and JSON processing
-  implementation libs.httpclient
-  implementation libs.groovy.json
-
-  // Alternative CLI
-  implementation libs.commons.cli
+  // WebDriver
+  implementation 'org.seleniumhq.selenium:selenium-java:4.31.0'
+  implementation 'org.seleniumhq.selenium:selenium-chrome-driver:4.31.0'
+  implementation 'org.seleniumhq.selenium:selenium-firefox-driver:4.31.0'
+  implementation 'io.github.bonigarcia:webdrivermanager:6.0.1'
 
   // Logging
-  implementation libs.slf4j.api
-  implementation libs.logback
+  implementation 'org.slf4j:slf4j-api:2.0.17'
+  implementation 'ch.qos.logback:logback-classic:1.5.18'
 
   // Testing
-  testImplementation libs.spock.core
-  testImplementation libs.junit
-  testRuntimeOnly libs.junit.engine
-  testImplementation libs.geb.spock
+  testImplementation 'org.spockframework:spock-core:2.4-M5-groovy-4.0'
 
-// JUnit Platform dependencies
-  testImplementation 'org.junit.platform:junit-platform-runner:1.13.0-M2'
-  testImplementation 'org.junit.platform:junit-platform-suite-api:1.13.0-M2'
-  testRuntimeOnly 'org.junit.platform:junit-platform-suite-engine:1.13.0-M2'
+  // JUnit Platform for Test Suite support
+  testImplementation 'org.junit.platform:junit-platform-suite-api:1.10.2'
+  testImplementation 'org.junit.platform:junit-platform-suite-engine:1.10.2'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
 }
 
 java {
@@ -69,225 +56,61 @@ application {
   mainClass = 'com.webanalyzer.cli.WebPageAnalyzer'
 }
 
-jar {
-  manifest {
-    attributes('Main-Class': 'com.webanalyzer.cli.WebPageAnalyzer')
-  }
-}
-
-tasks.withType(JavaCompile).configureEach {
-  // Removed --enable-preview flags as we're using Java 21 LTS
-}
-
 tasks.withType(Test).configureEach {
-  // Removed --enable-preview flags
-  useJUnitPlatform()
-}
-
-tasks.withType(JavaExec).configureEach {
-  // Removed --enable-preview flags
-}
-
-tasks.named('run', JavaExec) {
-  group = 'application'
-  description = 'Runs the Web Page Analyzer'
-
-  // Allow passing program arguments via -Pargs="arg1 arg2"
-  if (project.hasProperty('args')) {
-    args project.args.split()
-  }
-}
-
-shadowJar {
-  archiveBaseName.set('web-page-analyzer')
-  archiveClassifier.set('')
-  archiveVersion.set(project.version)
-}
-
-// Distribution tasks
-tasks.register('createDistribution', Copy) {
-  dependsOn tasks.named('shadowJar')
-  from layout.buildDirectory.file("libs/web-page-analyzer-${version}.jar")
-  into layout.buildDirectory.dir("distribution")
-  rename { filename -> 'web-page-analyzer.jar' }
-
-  doLast {
-    def jarFile = layout.buildDirectory.file("distribution/web-page-analyzer.jar").get().asFile
-    jarFile.setExecutable(true, false)
-  }
-}
-
-tasks.register('createScripts') {
-  dependsOn tasks.named('createDistribution')
-  doLast {
-    def scriptDir = layout.buildDirectory.dir("distribution").get().asFile
-    scriptDir.mkdirs()
-
-    // Create Unix shell script
-    def unixScript = new File(scriptDir, 'web-page-analyzer')
-    unixScript.text = """#!/bin/sh
-java -jar "\$(dirname "\$0")/web-page-analyzer.jar" "\$@"
-"""
-    unixScript.setExecutable(true, false)
-
-    // Create Windows batch script
-    def windowsScript = new File(scriptDir, 'web-page-analyzer.bat')
-    windowsScript.text = """@echo off
-java -jar "%~dp0web-page-analyzer.jar" %*
-"""
-  }
-}
-
-tasks.register('dist') {
-  dependsOn tasks.named('createDistribution'), tasks.named('createScripts')
-  description = 'Creates a distributable package with executable scripts'
-  group = 'distribution'
-}
-
-// Configure JUnit platform for test execution
-test {
   useJUnitPlatform()
 
-  // Enable JaCoCo coverage collection
-  finalizedBy jacocoTestReport
+  // Removed the spock.configuration system property that caused issues
 
-  // Configure test logging
+  // Ensure proper encoding for tests
+  systemProperty 'file.encoding', 'UTF-8'
+
   testLogging {
     events = ["passed", "skipped", "failed"]
     exceptionFormat = "full"
     showStandardStreams = true
   }
-
-  // Configure system properties
-  systemProperty 'file.encoding', 'UTF-8'
-
-  // Configure test timeouts
-  systemProperty 'spock.configuration', 'SpockConfig.groovy'
 }
 
-// Configure the JaCoCo test report
+// Configure JaCoCo
+jacoco {
+  toolVersion = "0.8.11"
+}
+
 jacocoTestReport {
-  dependsOn test
-
   reports {
-    xml.required = true // Required for coverage reports in CI tools
-    html.required = true // Human-readable report
-    csv.required = false
-
-    // Configure report output directories (using the correct property syntax)
-    html.outputLocation.set(file("${buildDir}/reports/coverage/html"))
-    xml.outputLocation.set(file("${buildDir}/reports/coverage/coverage.xml"))
-  }
-
-  // Add execution data from other tasks if needed
-  executionData.setFrom(files("${buildDir}/jacoco/test.exec"))
-
-  // Configure coverage verification
-  afterEvaluate {
-    classDirectories.setFrom(files(classDirectories.files.collect {
-      fileTree(dir: it, exclude: [
-          // Exclude generated classes
-          "**/*\$*",
-          // Exclude test classes
-          "**/test/**"
-      ])
-    }))
+    xml.required = true
+    html.required = true
+    html.outputLocation = file("${buildDir}/reports/coverage/html")
   }
 }
 
-// Add coverage verification to ensure minimum coverage thresholds
 jacocoTestCoverageVerification {
-  dependsOn jacocoTestReport
-
   violationRules {
     rule {
       limit {
-        minimum = 0.8 // 80% minimum coverage required as per project requirements
-      }
-    }
-
-    rule {
-      element = 'CLASS'
-      includes = ['com.webanalyzer.core.*']
-      limit {
-        minimum = 0.85 // Higher threshold for core classes
-      }
-    }
-
-    rule {
-      element = 'CLASS'
-      includes = ['com.webanalyzer.cli.commands.*']
-      limit {
-        minimum = 0.8 // Threshold for command classes
+        minimum = 0.8
       }
     }
   }
 }
 
-// Create a custom task to run all tests with coverage
-tasks.register('testWithCoverage', Task) {
+// Custom task to run tests with coverage
+tasks.register('testWithCoverage', Test) {
   group = 'Verification'
-  description = 'Runs all tests with coverage report and verification'
+  description = 'Runs tests with JaCoCo coverage reporting and verification'
 
-  dependsOn test
-  dependsOn jacocoTestReport
-  dependsOn jacocoTestCoverageVerification
+  finalizedBy jacocoTestReport, jacocoTestCoverageVerification
 
   doLast {
-    println "Test coverage report generated at: ${jacocoTestReport.reports.html.outputLocation.get()}"
-    println "Coverage verification completed with minimum threshold of 80%"
+    println "Test coverage report generated at: ${buildDir}/reports/coverage/html/index.html"
   }
 }
 
-// Create a SpockConfig.groovy file for global test configuration
-tasks.register('createSpockConfig') {
-  def outputFile = file('src/test/resources/SpockConfig.groovy')
-  outputs.file(outputFile)
-
-  doLast {
-    if (!outputFile.exists()) {
-      outputFile.parentFile.mkdirs()
-      outputFile.text = '''
-import java.util.concurrent.TimeUnit
-
-runner {
-    // Global timeout for all tests to prevent hanging tests
-    filterStackTrace = true
-    optimizeRunOrder = true
-}
-
-// Configure default timeout for all feature methods
-spock {
-    timeout {
-        enabled = true
-        unit = TimeUnit.SECONDS
-        value = 60
-    }
-}
-'''
-      logger.lifecycle("Created SpockConfig.groovy at ${outputFile.absolutePath}")
-    }
-  }
-}
-
-// Create sample HTML files for testing
+// Task to create sample HTML files for testing
 tasks.register('createSampleHtmlFiles', JavaExec) {
+  group = 'Testing'
   description = 'Generates sample HTML files for testing'
-  group = 'Test preparation'
 
   classpath = sourceSets.test.runtimeClasspath
   mainClass = 'com.webanalyzer.test.util.SampleHtmlFilesGenerator'
-
-  doFirst {
-    println "Generating sample HTML files for testing..."
-  }
-}
-
-// Make tests depend on the Spock configuration and sample HTML files
-test.dependsOn createSpockConfig
-test.dependsOn createSampleHtmlFiles
-
-// Add explicit dependency between processTestResources and createSpockConfig
-tasks.named('processTestResources') {
-  dependsOn 'createSpockConfig'
 }

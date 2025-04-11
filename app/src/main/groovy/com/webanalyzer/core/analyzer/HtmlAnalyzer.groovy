@@ -371,31 +371,155 @@ class HtmlAnalyzer {
 
     return [performance: performance]
   }
-}
 
-/**
- * Options for HTML analysis.
- */
-class AnalyzerOptions {
-  String encoding = "UTF-8"
-  boolean includeAll = true
-  boolean includeBasicInfo = false
-  boolean includeElements = false
-  boolean includeLinks = false
-  boolean includeStructure = false
-  boolean includeContent = false
-  boolean includePerformance = false
-}
+  /**
+   * Format statistics as text output.
+   */
+  String formatAsText(Map<String, Object> stats) {
+    def result = new StringBuilder()
+    result.append("Web Page Statistics\n")
+    result.append("=================\n\n")
 
-/**
- * Custom exception for analyzer errors.
- */
-class AnalyzerException extends Exception {
-  AnalyzerException(String message) {
-    super(message)
-  }
+    // Format basic information
+    if (stats.containsKey("basicInfo")) {
+      result.append("Document Information:\n")
+      stats.basicInfo.each { key, value ->
+        if (key == "metadata") {
+          result.append("  Metadata:\n")
+          value.each { metaKey, metaValue ->
+            result.append("    ${metaKey}: ${metaValue}\n")
+          }
+        } else {
+          result.append("  ${key.capitalize()}: ${value}\n")
+        }
+      }
+      result.append("\n")
+    }
 
-  AnalyzerException(String message, Throwable cause) {
-    super(message, cause)
+    // Format element statistics
+    if (stats.containsKey("elements")) {
+      result.append("Element Counts:\n")
+      result.append("  Total Elements: ${stats.elements.totalElements}\n")
+
+      if (stats.elements.containsKey("elementsByTag")) {
+        result.append("  Top 10 Elements by Tag:\n")
+        stats.elements.elementsByTag.sort { -it.value }.take(10).each { tag, count ->
+          result.append("    ${tag}: ${count}\n")
+        }
+      }
+
+      // Other element statistics
+      def elementTypes = stats.elements.findAll { key, value ->
+        key != "totalElements" && key != "elementsByTag"
+      }
+
+      if (elementTypes) {
+        result.append("  Other Element Types:\n")
+        elementTypes.each { key, value ->
+          result.append("    ${key.capitalize()}: ${value}\n")
+        }
+      }
+
+      result.append("\n")
+    }
+
+    // Format link analysis
+    if (stats.containsKey("links")) {
+      result.append("Link Analysis:\n")
+      result.append("  Total Links: ${stats.links.totalLinks}\n")
+
+      if (stats.links.containsKey("linkTypes")) {
+        stats.links.linkTypes.each { type, count ->
+          result.append("  ${type.capitalize()}: ${count}\n")
+        }
+      }
+
+      if (stats.links.containsKey("externalDomains")) {
+        result.append("  External Domains: ${stats.links.externalDomains.size()}\n")
+        result.append("  External Domain List:\n")
+        stats.links.externalDomains.take(10).each { domain ->
+          result.append("    ${domain}\n")
+        }
+
+        if (stats.links.externalDomains.size() > 10) {
+          result.append("    ... and ${stats.links.externalDomains.size() - 10} more\n")
+        }
+      }
+
+      result.append("\n")
+    }
+
+    // Format structure analysis
+    if (stats.containsKey("structure")) {
+      result.append("Structure:\n")
+      result.append("  Maximum DOM Depth: ${stats.structure.maxDOMDepth}\n")
+
+      if (stats.structure.containsKey("averageNestingLevel")) {
+        result.append("  Average Nesting Level: ${String.format("%.2f", stats.structure.averageNestingLevel)}\n")
+      }
+
+      if (stats.structure.containsKey("deepestElement")) {
+        result.append("  Deepest Element: ${stats.structure.deepestElement}\n")
+      }
+
+      // Other structure statistics
+      def structureTypes = stats.structure.findAll { key, value ->
+        key != "maxDOMDepth" && key != "averageNestingLevel" &&
+            key != "deepestElement" && key != "elementsByLevel"
+      }
+
+      if (structureTypes) {
+        result.append("  Structural Elements:\n")
+        structureTypes.each { key, value ->
+          result.append("    ${key.capitalize()}: ${value}\n")
+        }
+      }
+
+      result.append("\n")
+    }
+
+    // Format content analysis
+    if (stats.containsKey("content")) {
+      result.append("Content:\n")
+      result.append("  Text Length: ${stats.content.textLength} characters\n")
+      result.append("  Word Count: ${stats.content.wordCount} words\n")
+
+      if (stats.content.containsKey("contentCodeRatio")) {
+        result.append("  Content/Code Ratio: ${String.format("%.2f", stats.content.contentCodeRatio * 100)}%\n")
+      }
+
+      if (stats.content.containsKey("headings")) {
+        result.append("  Heading Distribution:\n")
+        stats.content.headings.each { heading, count ->
+          result.append("    ${heading.toUpperCase()}: ${count}\n")
+        }
+      }
+
+      result.append("\n")
+    }
+
+    // Format performance analysis
+    if (stats.containsKey("performance")) {
+      result.append("Performance Considerations:\n")
+
+      if (stats.performance.containsKey("scripts")) {
+        result.append("  Script Loading:\n")
+        stats.performance.scripts.each { type, count ->
+          result.append("    ${type.capitalize()}: ${count}\n")
+        }
+      }
+
+      // Other performance metrics
+      def perfMetrics = stats.performance.findAll { key, value -> key != "scripts" }
+
+      if (perfMetrics) {
+        result.append("  Other Performance Metrics:\n")
+        perfMetrics.each { key, value ->
+          result.append("    ${key.capitalize()}: ${value}\n")
+        }
+      }
+    }
+
+    return result.toString()
   }
 }

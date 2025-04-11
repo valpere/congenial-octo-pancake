@@ -35,10 +35,20 @@ class ParseCommandIntegrationTest extends Specification {
     exitCode == 0
     outputFile.exists()
     def json = new JsonSlurper().parse(outputFile)
+
+    // First verify we have a valid JSON structure
+    json != null
+
+    // Then verify it has the expected HTML structure
     json.tagName == "html"
-    json.children.find { it.tagName == "body" }
-    json.children[0].children.find { it.tagName == "h1" && it.text == "Test Document" }
-    json.children[0].children.find { it.tagName == "p" && it.text == "Hello, world!" }
+    def body = json.children.find { it.tagName == "body" }
+    body != null
+    def h1 = body.children.find { it.tagName == "h1" }
+    h1 != null
+    h1.text == "Test Document"
+    def p = body.children.find { it.tagName == "p" }
+    p != null
+    p.text == "Hello, world!"
   }
 
   @Timeout(10)

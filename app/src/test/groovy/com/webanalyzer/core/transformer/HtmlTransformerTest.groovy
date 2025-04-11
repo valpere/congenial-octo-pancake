@@ -9,9 +9,6 @@ import java.nio.file.Path
 
 /**
  * Unit tests for the HtmlTransformer class.
- *
- * These tests verify HTML transformation to various formats (Markdown, plain text, JSON)
- * with proper character encoding and formatting.
  */
 class HtmlTransformerTest extends Specification {
 
@@ -137,7 +134,7 @@ class HtmlTransformerTest extends Specification {
     then:
     markdownResult.contains("# Привіт світе")
     markdownResult.contains("你好世界")
-    plainResult.contains("ПРИВЕТ МИР")
+    plainResult.contains("ПРИВІТ СВІТЕ")
     plainResult.contains("你好世界")
     jsonResult.contains("Привіт світе")
     jsonResult.contains("你好世界")
@@ -192,9 +189,22 @@ class HtmlTransformerTest extends Specification {
 
     then:
     if (includeImages) {
-      assert result.contains("test.jpg")
+      if (format == "markdown") {
+        assert result.contains("![Test Image](test.jpg)")
+      } else if (format == "plain") {
+        assert result.contains("[Image: Test Image]")
+      } else if (format == "json") {
+        assert result.contains("test.jpg")
+      }
     } else {
-      assert !result.contains("test.jpg")
+      if (format == "markdown") {
+        assert !result.contains("![Test Image](test.jpg)")
+      } else if (format == "plain") {
+        assert !result.contains("[Image: Test Image]")
+      } else if (format == "json") {
+        // For JSON format when includeImages=false, it should not include images section
+        assert !result.contains('"type":"image"')
+      }
     }
 
     where:

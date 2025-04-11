@@ -1,6 +1,7 @@
 package com.webanalyzer.core.transformer
 
 import groovy.json.JsonGenerator
+import groovy.json.JsonOutput
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -46,6 +47,9 @@ class HtmlTransformer {
         default:
           throw new TransformerException("Unsupported format: ${format}")
       }
+    } catch (TransformerException e) {
+      // Re-throw transformer exceptions directly
+      throw e
     } catch (Exception e) {
       logger.error("Error transforming HTML: ${e.message}", e)
       throw new TransformerException("Failed to transform HTML: ${e.message}", e)
@@ -77,6 +81,9 @@ class HtmlTransformer {
         default:
           throw new TransformerException("Unsupported format: ${format}")
       }
+    } catch (TransformerException e) {
+      // Re-throw transformer exceptions directly
+      throw e
     } catch (Exception e) {
       logger.error("Error transforming HTML file: ${e.message}", e)
       throw new TransformerException("Failed to transform HTML file: ${e.message}", e)
@@ -117,7 +124,23 @@ class HtmlTransformer {
         break
 
       case "p":
-        markdown.append("${element.text().trim()}\n\n")
+        // Check if there are any child elements
+        if (element.children().isEmpty()) {
+          markdown.append("${element.text().trim()}\n\n")
+        } else {
+          // Process child nodes for paragraph
+          element.childNodes().each { node ->
+            if (node instanceof TextNode) {
+              String text = node.text().trim()
+              if (!text.isEmpty()) {
+                markdown.append(text)
+              }
+            } else if (node instanceof Element) {
+              processInlineElement(node, markdown, options)
+            }
+          }
+          markdown.append("\n\n")
+        }
         break
 
       case "ul":
@@ -149,7 +172,9 @@ class HtmlTransformer {
         break
 
       case "code":
-        markdown.append("`${element.text().trim()}`")
+        if (element.parent()?.tagName() != "pre") {
+          markdown.append("`${element.text().trim()}`")
+        }
         break
 
       case "a":
@@ -175,6 +200,16 @@ class HtmlTransformer {
         markdown.append("\n")
         break
 
+      case "strong":
+      case "b":
+        markdown.append("**${element.text().trim()}**")
+        break
+
+      case "em":
+      case "i":
+        markdown.append("*${element.text().trim()}*")
+        break
+
       default:
         // Process child nodes - text and child elements
         for (def node : element.childNodes()) {
@@ -187,6 +222,34 @@ class HtmlTransformer {
             processElementToMarkdown(node, markdown, headingLevel, options)
           }
         }
+    }
+  }
+
+  /**
+   * Process inline element for Markdown.
+   */
+  private void processInlineElement(Element element, StringBuilder markdown, TransformOptions options) {
+    switch (element.tagName()) {
+      case "strong":
+      case "b":
+        markdown.append("**${element.text().trim()}**")
+        break
+      case "em":
+      case "i":
+        markdown.append("*${element.text().trim()}*")
+        break
+      case "code":
+        markdown.append("`${element.text().trim()}`")
+        break
+      case "a":
+        if (options.preserveLinks) {
+          markdown.append("[${element.text().trim()}](${element.attr("href")})")
+        } else {
+          markdown.append(element.text().trim())
+        }
+        break
+      default:
+        markdown.append(element.text().trim())
     }
   }
 
@@ -303,31 +366,13 @@ class HtmlTransformer {
     }
 
     // Use custom generator to preserve UTF-8 characters
-    return options.prettyPrint ?
-        generator.toJson(result) :
-        generator.toJson(result)
-  }
-}
+    String jsonString = generator.toJson(result)
 
-/**
- * Options for HTML transformation.
- */
-class TransformOptions {
-  String encoding = "UTF-8"
-  boolean preserveLinks = true
-  boolean includeImages = true
-  boolean prettyPrint = false
-}
-
-/**
- * Custom exception for transformation errors.
- */
-class TransformerException extends Exception {
-  TransformerException(String message) {
-    super(message)
-  }
-
-  TransformerException(String message, Throwable cause) {
-    super(message, cause)
+    // Apply pretty printing if requested
+    if (options.prettyPrint) {
+      return JsonOutput.prettyPrint(jsonString)
+    } else {
+      return jsonString
+    }
   }
 }

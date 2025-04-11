@@ -29,17 +29,32 @@ class HtmlParser {
    * @param includeText Whether to include text content in the JSON
    * @param prettyPrint Whether to format the JSON with indentation
    * @return A String containing the JSON representation of the DOM
+   * @throws ParserException if an error occurs during parsing
    */
   String parseToJson(File file, Charset charset, boolean includeText, boolean prettyPrint) {
     logger.debug("Parsing file: ${file.absolutePath} with charset: ${charset.displayName()}")
 
     try {
+      // Verify we can use the charset
+      if (!Charset.isSupported(charset.name())) {
+        throw new ParserException("Unsupported charset: ${charset.name()}")
+      }
+
       // Read the file using the specified charset
-      String htmlContent = file.getText(charset.name())
+      String htmlContent
+      try {
+        htmlContent = file.getText(charset.name())
+      } catch (Exception e) {
+        throw new ParserException("Failed to read file with charset ${charset.name()}: ${e.message}", e)
+      }
+
       Document document = Jsoup.parse(htmlContent)
 
       // Convert to map and then to JSON
       return convertToJson(document, includeText, prettyPrint)
+    } catch (ParserException e) {
+      // Re-throw parser exceptions directly
+      throw e
     } catch (Exception e) {
       logger.error("Error parsing HTML file: ${e.message}", e)
       throw new ParserException("Failed to parse HTML file: ${e.message}", e)
@@ -53,6 +68,7 @@ class HtmlParser {
    * @param includeText Whether to include text content in the JSON
    * @param prettyPrint Whether to format the JSON with indentation
    * @return A String containing the JSON representation of the DOM
+   * @throws ParserException if an error occurs during parsing
    */
   String parseHtmlToJson(String html, boolean includeText, boolean prettyPrint) {
     logger.debug("Parsing HTML string (length: ${html.length()})")
@@ -72,14 +88,23 @@ class HtmlParser {
    * Convert a JSoup Document to JSON with proper UTF-8 handling
    */
   private String convertToJson(Document document, boolean includeText, boolean prettyPrint) {
-    // Convert document to map
-    def domMap = elementToMap(document.root(), includeText)
+    // Convert html element directly, not through a #root wrapper
+    Element htmlElement = document.select("html").first()
+    if (htmlElement != null) {
+      def domMap = elementToMap(htmlElement, includeText)
 
-    // Convert to JSON with explicit handling for non-ASCII characters
-    String jsonString = generator.toJson(domMap)
+      // Convert to JSON with explicit handling for non-ASCII characters
+      String jsonString = generator.toJson(domMap)
 
-    // Apply pretty printing if requested
-    return prettyPrint ? JsonOutput.prettyPrint(jsonString) : jsonString
+      // Apply pretty printing if requested
+      return prettyPrint ? JsonOutput.prettyPrint(jsonString) : jsonString
+    } else {
+      logger.warn("No HTML element found in document")
+      // Fallback to the original approach
+      def domMap = elementToMap(document.root(), includeText)
+      String jsonString = generator.toJson(domMap)
+      return prettyPrint ? JsonOutput.prettyPrint(jsonString) : jsonString
+    }
   }
 
   /**
@@ -110,17 +135,5 @@ class HtmlParser {
 
     return result
   }
-}
 
-/**
- * Custom exception for HTML parsing errors
- */
-class ParserException extends Exception {
-  ParserException(String message) {
-    super(message)
-  }
-
-  ParserException(String message, Throwable cause) {
-    super(message, cause)
-  }
 }
